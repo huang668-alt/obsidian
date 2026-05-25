@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "八股文/Java八股文MYSQL篇.md",
+                "file": "八股文/Java八股文JVM篇.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Java八股文MYSQL篇"
+              "title": "Java八股文JVM篇"
             }
           }
         ]
@@ -194,10 +194,11 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "b637ef58d7ae46b7",
+  "active": "58937da49953edc8",
   "lastOpenFiles": [
-    "八股文/Java八股文基础篇.md",
     "八股文/Java八股文MYSQL篇.md",
+    "八股文/Java八股文JVM篇.md",
+    "八股文/Java八股文基础篇.md",
     "未命名.base",
     "未命名 1.base",
     "未命名 2.base",
