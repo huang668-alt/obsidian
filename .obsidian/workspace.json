@@ -1,0 +1,207 @@
+{
+  "main": {
+    "id": "074683cc473f7d48",
+    "type": "split",
+    "children": [
+      {
+        "id": "6f4a6522fce8e2df",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "58937da49953edc8",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "八股文/Java八股文MYSQL篇.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Java八股文MYSQL篇"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "faf7db1828cb6e55",
+    "type": "split",
+    "children": [
+      {
+        "id": "465d44d9c34f7b62",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b637ef58d7ae46b7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "96f811fc16c27fbb",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "path:\"未命名/\" ",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "a395672f2925bf6e",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "86c06fd327049f3e",
+    "type": "split",
+    "children": [
+      {
+        "id": "d4056de3214e8824",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ef9a8b5a5fb9e035",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "八股文/Java八股文基础篇.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Java八股文基础篇 的反向链接列表"
+            }
+          },
+          {
+            "id": "e4363a58f311b0f2",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "八股文/Java八股文基础篇.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Java八股文基础篇 的出链列表"
+            }
+          },
+          {
+            "id": "3a9a65c320f335e1",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "1d4b66c2098abf6e",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "添加笔记属性"
+            }
+          },
+          {
+            "id": "068137ee62f4809e",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "八股文/Java八股文基础篇.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Java八股文基础篇 的大纲"
+            }
+          },
+          {
+            "id": "90e9c1536893ec73",
+            "type": "leaf",
+            "state": {
+              "type": "git-view",
+              "state": {},
+              "icon": "git-pull-request",
+              "title": "Source Control"
+            }
+          }
+        ],
+        "currentTab": 5
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "bases:新建数据库": false,
+      "obsidian-git:Open Git source control": false
+    }
+  },
+  "active": "b637ef58d7ae46b7",
+  "lastOpenFiles": [
+    "八股文/Java八股文基础篇.md",
+    "八股文/Java八股文MYSQL篇.md",
+    "未命名.base",
+    "未命名 1.base",
+    "未命名 2.base",
+    "欢迎.md",
+    "八股文"
+  ]
+}
