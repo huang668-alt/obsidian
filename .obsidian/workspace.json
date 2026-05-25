@@ -8,17 +8,17 @@
         "type": "tabs",
         "children": [
           {
-            "id": "58937da49953edc8",
+            "id": "cf618f74cacd8873",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "split-diff-view",
               "state": {
-                "file": "八股文/Java八股文JVM篇.md",
-                "mode": "source",
-                "source": false
+                "aFile": ".gitignore",
+                "bFile": ".gitignore",
+                "aRef": ""
               },
-              "icon": "lucide-file",
-              "title": "Java八股文JVM篇"
+              "icon": "diff",
+              "title": "Diff: .gitignore  (Working Tree)"
             }
           }
         ]
@@ -194,10 +194,11 @@
       "obsidian-git:Open Git source control": false
     }
   },
-  "active": "58937da49953edc8",
+  "active": "cf618f74cacd8873",
   "lastOpenFiles": [
-    "八股文/Java八股文MYSQL篇.md",
     "八股文/Java八股文JVM篇.md",
+    "未命名.md",
+    "八股文/Java八股文MYSQL篇.md",
     "八股文/Java八股文基础篇.md",
     "未命名.base",
     "未命名 1.base",
