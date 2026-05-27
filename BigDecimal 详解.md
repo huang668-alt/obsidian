@@ -1,28 +1,4 @@
 
-## BigDecimal 详解
-`BigDecimal` 可以实现对小数的运算，不会造成精度丢失。
-
-通常情况下，大部分需要小数精确运算结果的业务场景（比如涉及到钱的场景）都是通过 `BigDecimal` 来做的。
-
-《阿里巴巴 Java 开发手册》中提到：**浮点数之间的等值判断，基本数据类型不能用 == 来比较，包装数据类型不能用 equals 来判断。**
-
-![](https://oss.javaguide.cn/javaguide/image-20211213101646884.png)
-
-具体原因我们在上面已经详细介绍了，这里就不多提了。
-
-想要解决浮点数运算精度丢失这个问题，可以直接使用 `BigDecimal` 来定义小数的值，然后再进行小数的运算操作即可。
-
-```java
-BigDecimal a = new BigDecimal("1.0");
-BigDecimal b = new BigDecimal("0.9");
-BigDecimal c = new BigDecimal("0.8");
-
-BigDecimal x = a.subtract(b);
-BigDecimal y = b.subtract(c);
-
-System.out.println(x.compareTo(y));// 0
-```
-
 ## BigDecimal 常见方法
 
 ### 创建
@@ -315,6 +291,16 @@ public class BigDecimalUtil {
 
 ![RoundingMode.HALF_EVEN](https://oss.javaguide.cn/github/javaguide/java/basis/RoundingMode.HALF_EVEN.png)
 
+
+## `BigDecimal` 为什么能做到 100% 精确？
+
+`BigDecimal` 的核心原理可以用一句话概括：**把小数扩大成整数来存，同时用一个计数器记住小数点的位置。**
+
+在它的源码内部，主要由两个核心部分组成：
+
+1. **`BigInteger intVal`（无标度值）：** 这是一个去掉了小数点的**纯整数**。它使用数组存储，理论上可以表示无限大的整数，因此绝不会丢失精度。
+    
+2. **`int scale`（标度）：** 一个整数，用来记录**小数点右边有几位数字**。
 ## 总结
 
 浮点数没有办法用二进制精确表示，因此存在精度丢失的风险。
