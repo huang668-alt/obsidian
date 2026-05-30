@@ -653,79 +653,144 @@ System.out.println(s == s2);
 + JVM（Java虚拟机）的垃圾回收机制（Garbage Collection，GC）是Java内存管理的核心部分。它负责自动回收不再使用的对象，释放内存空间，从而避免内存泄漏和手动内存管理的复杂性，垃圾收集主要是针对堆和方法区进行。
 + 垃圾：是指程序中不再被引用的对象。这些对象占用的内存可以被回收。
 + Stop-the-world：意味着JVM由于要执行GC而停止了应用程序的执行，并且这种情形会在任何一种GC算法中发生，
-+ 当Stop-the-world发生时，除了GC所需的线程以外，所有线程都处于等待状态直到GC任务完成。事实上，GC优化很多时候就是指减少Stop-the-world发生的时阅。从而使系统具有高吞吐，低停顿的特点。
+	+ 当Stop-the-world发生时，除了GC所需的线程以外，所有线程都处于等待状态直到GC任务完成。事实上，GC优化很多时候就是指减少Stop-the-world发生的时阅。从而使系统具有高吞吐，低停顿的特点。
 
 ### 2、方法区垃圾回收
 #### 1，类的生命周期
-1. **<font style="color:rgb(0, 0, 0) !important;">加载（Loading）</font>**
-    - **<font style="color:rgb(0, 0, 0) !important;">过程</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：通过类的全限定名来获取定义此类的二进制字节流（如.class 文件、网络、动态生成等），并将这个字节流所代表的静态存储结构转化为方法区的运行时数据结构，同时在内存中生成一个代表这个类的</font>`<font style="color:rgb(0, 0, 0);">java.lang.Class</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">对象，作为方法区这个类的各种数据的访问入口。</font>
-    - **<font style="color:rgb(0, 0, 0) !important;">注意</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：加载阶段与连接阶段的部分动作（如一部分字节码文件格式验证动作）是交叉进行的，但加载阶段的开始时间要先于连接阶段。</font>
-2. **<font style="color:rgb(0, 0, 0) !important;">连接（Linking）</font>**
-    - **<font style="color:rgb(0, 0, 0) !important;">验证（Verification）</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：确保 Class 文件的字节流中包含的信息符合当前虚拟机的要求，并且不会危害虚拟机自身的安全。验证内容包括文件格式验证、元数据验证、字节码验证、符号引用验证等。</font>
-    - **<font style="color:rgb(0, 0, 0) !important;">准备（Preparation）</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：为类变量（被 static 修饰的变量）分配内存并设置类变量初始值（如 0、null、false 等默认值），但不包括实例变量（实例变量会在对象实例化时随着对象一起分配在堆中）。如果类变量被 final 修饰且为基本类型或字符串常量，则会在准备阶段直接赋值为指定的值。</font>
-    - **<font style="color:rgb(0, 0, 0) !important;">解析（Resolution）</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：虚拟机将常量池内的符号引用替换为直接引用的过程。符号引用以一组符号来描述所引用的目标，直接引用是直接指向目标的指针、相对偏移量或一个能间接定位到目标的句柄。解析动作主要针对类或接口、字段、类方法、接口方法、方法类型、方法句柄和调用点限定符等 7 类符号引用进行。</font>
-3. **<font style="color:rgb(0, 0, 0) !important;">初始化（Initialization）</font>**
-    - **<font style="color:rgb(0, 0, 0) !important;">触发时机</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：类的初始化阶段是类加载过程的最后一步，在准备阶段，类变量已经赋过一次系统要求的初始值，而在初始化阶段，则根据程序员通过程序制定的主观计划去初始化类变量和其他资源。以下情况会触发类的初始化：</font>
-        * <font style="color:rgba(0, 0, 0, 0.85) !important;">遇到 new、getstatic、putstatic 或 invokestatic 这四条字节码指令时（如使用 new 关键字实例化对象、读取或设置一个类的静态字段（被 final 修饰已在编译期把结果放入常量池的静态字段除外）、调用一个类的静态方法）。</font>
-        * <font style="color:rgba(0, 0, 0, 0.85) !important;">使用 java.lang.reflect 包的方法对类进行反射调用的时候。</font>
-        * <font style="color:rgba(0, 0, 0, 0.85) !important;">当初始化一个类的时候，如果发现其父类还没有进行过初始化，则需要先触发其父类的初始化。</font>
-        * <font style="color:rgba(0, 0, 0, 0.85) !important;">当虚拟机启动时，用户需要指定一个要执行的主类（包含 main () 方法的那个类），虚拟机会先初始化这个主类。</font>
-    - **<font style="color:rgb(0, 0, 0) !important;">执行内容</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：执行类构造器</font>`<font style="color:rgb(0, 0, 0);"><clinit>()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">方法的过程。</font>`<font style="color:rgb(0, 0, 0);"><clinit>()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">方法是由编译器自动收集类中的所有类变量的赋值动作和静态语句块（static {} 块）中的语句合并产生的，编译器收集的顺序是由语句在源文件中出现的顺序决定的。静态语句块中只能访问到定义在静态语句块之前的变量，定义在它之后的变量，在前面的静态语句块可以赋值，但不能访问。</font>
-4. **<font style="color:rgb(0, 0, 0) !important;">使用（Using）</font>**
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">类初始化完成后，就可以在程序中使用该类的实例、静态方法、静态字段等。</font>
-5. **<font style="color:rgb(0, 0, 0) !important;">卸载（Unloading）</font>**
-    - **<font style="color:rgb(0, 0, 0) !important;">条件</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：类的卸载即该类的 Class 对象被垃圾回收。要实现类的卸载，需要满足以下三个条件：</font>
-        * <font style="color:rgba(0, 0, 0, 0.85) !important;">该类的所有实例都已经被垃圾回收。</font>
-        * <font style="color:rgba(0, 0, 0, 0.85) !important;">加载该类的类加载器已经被垃圾回收。</font>
-        * <font style="color:rgba(0, 0, 0, 0.85) !important;">该类对应的</font>`<font style="color:rgb(0, 0, 0);">java.lang.Class</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">对象没有在任何地方被引用，无法在任何地方通过反射访问该类的方法。</font>
-    - **<font style="color:rgb(0, 0, 0) !important;">过程</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：当满足上述条件时，Java 虚拟机可能会卸载该类，将其占用的内存空间回收。</font>
 
+在 JVM 底层，一个 Java 类从 `.class` 字节码文件（躺在硬盘上）变成内存中可以运转的机器，再到最后被当成垃圾清理掉，必须要经历一个极其严密的**生命周期（Lifecycle）**。
+
+##### 1. 加载（Loading）—— “把人招进工厂”
+
+- **物理动作**：JVM 的类加载器（ClassLoader）去硬盘、网络或者 JAR 包里找到那个 `.class` 字节码文件，把它读取到内存里。
+    
+- **内存布局巨变**：
+    
+    1. JVM 把这个文件里的各种结构（类名、方法、静态变量等）拆解后，物理存放到方法区（元空间）中，作为该类的“底层图纸”。
+        
+    2. 同时，JVM 会在堆内存（Heap）中，物理生成一个代表该类的 `java.lang.Class` 对象。这个对象就像是方法区那张图纸的“对外访问接口”，以后反射全靠它。
+
+> 💡 **核心注意：接下来的 2、3、4 阶段，在 JVM 规范里被统称为“连接（Linking）”。**
+
+##### 2. 验证（Verification）—— “极其严格的安检”
+
+- **物理动作**：JVM 为了防止别有用心的人篡改字节码文件来炸毁虚拟机，会对着 `.class` 文件的二进制字节流进行极其苛刻的审查。
+    
+- **查什么**：检查魔数（`0xCAFEBABE`）、版本号是否兼容当前 JDK、语法有没有残缺、指针是否越界等。如果安检不合格，直接抛出 `VerifyError`，类加载当场中止。
+
+##### 3. 准备（Preparation）—— “分发工位与空箱子（高频考点）”
+
+- **物理动作**：JVM 开始在**方法区**中，为该类的静态变量（static 修饰）分配物理内存。
+    
+- **致命细节**：此时分配完内存后，赋的是“系统零值（默认初始值）”，而不是你代码里写的真实值！
+    
+    - 比如你写了 `public static int value = 123;`
+        
+    - 在准备阶段，`value` 在内存里会被赋值为 **`0`**（对象引用会被赋值为 `null`，boolean 会被赋值为 `false`）。
+        
+    - _(特例：如果你写的是 `public static final int value = 123;`，因为加了 final，它变成了编译期常量，在这个阶段就会直接被赋值为 123。)_
+
+##### 4. 解析（Resolution）—— “把代号换成真实地址”
+
+- **物理动作**：正如我们在前面“常量池”讲过的，JVM 会把运行时常量池内的**符号引用（代号）替换为直接引用（真实的内存物理地址指针）**。
+    
+- **通俗解释**：原本代码里写着去调用“张三”，但机器不认识张三。在这个阶段，JVM 把“张三”这个名字，物理替换成了“工位号 A区3排2座”。
+
+##### 5. 初始化（Initialization）—— “真正装载你的数据”
+
+- **物理动作**：这是类加载过程的最后一步。JVM 开始执行类构造器 `<clinit>()` 方法（这个方法是编译器自动收集所有静态变量的赋值动作和静态代码块 `static {}` 组合而成的）。
+    
+- **内存变化**：直到这一步，前面准备阶段那个值为 `0` 的 `value`，才会被真正物理赋值为你在代码里写的 **`123`**。
+    
+- **何时触发（主动引用）**：JVM 极其懒惰，不到万不得已绝对不会初始化一个类。只有发生以下情况才会触发初始化：
+    
+    1. `new` 一个对象时。
+        
+    2. 读取或设置一个类的静态字段时。
+        
+    3. 调用一个类的静态方法时。
+        
+    4. 使用反射调用该类时。
+        
+    5. 虚拟机启动时被指定为包含 `main()` 方法的主类。
+
+##### 6. 使用（Using）—— “疯狂打工”
+
+- **物理动作**：类加载彻底完成。程序开始通过堆里的 `Class` 对象模板，疯狂地 `new` 出各种具体的实例对象。调用它的方法，修改它的属性，执行正常的业务逻辑。
+
+##### 7. 卸载（Unloading）—— “彻底查无此人”
+
+- **物理动作**：当这个类没有任何用处时，JVM 的垃圾回收器会把这个类在方法区里的“图纸”以及堆里的 `Class` 对象全部物理销毁。
+    
+- **触发条件极其苛刻（结合前面讲的永久代问题）**： 必须**同时满足**以下三个条件，这个类才会被允许卸载：
+    
+    1. 该类在堆里的**所有实例对象**都已经被回收。
+        
+    2. 加载该类的 ClassLoader（类加载器）已经被回收。
+        
+    3. 该类对应的 `java.lang.Class` 对象在任何地方都**没有被引用**（无法再通过反射造它）。
+
+
+加载（找图纸） ➡️ 验证（查图纸） ➡️ 准备（给静态变量赋 0 值） ➡️ 解析（找真实物理地址） ➡️ 初始化（执行静态代码块，赋真实值） ➡️ 使用 ➡️ 卸载。
 #### 2，对象的生命周期
-**<font style="color:rgb(0, 0, 0) !important;">1. 创建阶段（Creation）</font>**
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;">对象的创建是生命周期的起点，主要完成内存分配、初始化等操作，具体步骤因语言而异（以 Java 为例）：</font>
+如果说**类的生命周期**是工厂里“设计图纸、建立生产线”的过程，那么**对象的生命周期**就是这条生产线上“制造一个具体产品，直到它报废并被回收”的全过程。
 
-+ **<font style="color:rgb(0, 0, 0) !important;">类加载检查</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：当使用</font>`<font style="color:rgb(0, 0, 0);">new</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">关键字或反射等方式创建对象时，虚拟机首先检查该类是否已加载、连接和初始化。若未加载，则先执行类的加载过程。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">内存分配</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：为对象在堆内存中分配存储空间，包括对象的实例变量、对象头（存储哈希码、GC 分代年龄等信息）等。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">初始化零值</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：将分配到的内存空间初始化为零值（如 int 为 0，引用类型为 null），确保对象字段在未显式赋值时也有默认值。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">设置对象头</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：填充对象头信息，包括所属类的元数据指针、哈希码、GC 标记等。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">执行构造方法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：调用类的构造方法（</font>`<font style="color:rgb(0, 0, 0);">constructor</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">），对对象进行初始化（如为实例变量赋值、执行构造代码块等），最终生成一个可用的对象。</font>
+##### 1. 创建阶段（Created）—— “产品的物理诞生”
 
-**<font style="color:rgb(0, 0, 0) !important;">2. 使用阶段（Usage）</font>**
+这是对象生命周期中最复杂、也是面试最爱考的阶段。当你在代码里写下 `new User()` 的那一瞬间，JVM 在底层疯狂执行了 5 个微小但绝对顺序的物理动作：
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;">对象创建后进入使用阶段，此时对象被程序引用并参与各种操作：</font>
+1. **检查类是否已加载**：JVM 先去方法区查一下，`User` 这个类的图纸准备好了没？如果没有，必须先走一遍我们上一篇讲的“类的生命周期”把类加载进来。
+    
+2. **物理分配内存**：图纸有了，JVM 会在堆内存（通常是新生代的 Eden 区）里为这个新对象划分一块绝对大小的物理内存。
+    
+    - _(如果多个线程同时在抢内存，JVM 会使用 TLAB（本地线程分配缓冲）技术，让每个线程在自己专属的小地盘里分配，避免打架。)_
+        
+3. **初始化零值**：内存划好后，JVM 会像大扫除一样，把这块内存空间里的实例变量全部强行赋值为“系统默认零值”（如 `int` 赋值为 0，引用赋值为 `null`），这保证了你的对象即使不赋值也能跑，不会读到内存里的脏数据。
+    
+4. **设置对象头（Object Header）**：JVM 会在对象的头部贴上一个“物理身份标签”。里面记录了这个对象是哪个类的实例、它的 HashCode、**GC 的年龄（熬过了几次垃圾回收）**、以及**锁状态标志（比如有没有被 `synchronized` 锁住）**。
+    
+5. **执行 `<init>` 构造函数**：一切物理准备就绪，最后才是执行你写在 Java 代码里的 `public User() {...}` 构造方法，把 `0` 和 `null` 替换成你真正赋予的业务属性值。
 
-+ **<font style="color:rgb(0, 0, 0) !important;">被引用</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：对象通过引用变量（如 Java 中的对象引用）被访问，参与方法调用、属性读写、作为参数传递等。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">状态变化</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：对象的实例变量可能被修改，方法的执行会改变对象的状态（如一个</font>`<font style="color:rgb(0, 0, 0);">User</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">对象的</font>`<font style="color:rgb(0, 0, 0);">age</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">属性从 20 变为 21）。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">跨作用域传递</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：对象可在不同方法、类或线程间传递，只要存在有效引用，就不会被回收。</font>
+##### 2. 应用阶段（In Use）—— “打工人的黄金岁月”
 
-**<font style="color:rgb(0, 0, 0) !important;">3. 不可见阶段（Invisibility）</font>**
+- **物理状态**：对象正式构建完成，它的物理内存地址被交给了局部变量表里的引用（比如 `User u`）。
+    
+- **底层逻辑**：此时，只要顺着 **GC Roots**（比如虚拟机栈里正在运行的局部变量、静态变量）的引用链，能够一路摸到这个对象，它就处于“强引用”状态。
+    
+- **命运**：在这个阶段，对象是绝对安全的。无论堆内存多紧张，垃圾回收器（GC）都绝对不敢动它半根毫毛。
+    
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;">当对象不再被程序中的任何活跃引用指向时，进入不可见阶段：</font>
+##### 3. 不可见 / 不可达阶段（Unreachable）—— “惨遭遗弃，失去联系”
 
-+ **<font style="color:rgb(0, 0, 0) !important;">表现</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：在当前作用域内，没有任何引用变量指向该对象（如局部变量超出作用域被销毁，或引用被赋值为</font>`<font style="color:rgb(0, 0, 0);">null</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">）。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">注意</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：此时对象仍可能被其他作用域的引用持有（如被静态变量或其他线程的引用指向），因此不一定会被回收。</font>
+- **物理状态**：随着方法的执行结束，或者你手动写了一句 `u = null;`，栈帧里的引用变量被弹栈销毁了。
+    
+- **底层逻辑**：此时，这个对象依然完好无损地躺在堆内存里，但是**从 GC Roots 出发，再也找不到任何一条引用的线头能连到它身上了**。
+    
+- **命运**：它变成了内存里的“孤岛”。虽然还没死，但已经被 JVM 判了“死缓”，随时等待垃圾回收器的死神降临。
+    
 
-**<font style="color:rgb(0, 0, 0) !important;">4. 不可达阶段（Unreachability）</font>**
+##### 4. 收集与终结阶段（Collected & Finalized）—— “回收站与临终遗言”
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;">当对象不再被任何可达的引用链指向时，进入不可达阶段：</font>
+- **物理状态**：垃圾回收器（GC）开始巡逻，通过“可达性分析算法”发现了这个不可达的孤岛对象。
+    
+- **临终挣扎（`finalize` 方法）**：
+    
+    - GC 在杀掉它之前，会检查这个对象有没有重写过 `Object` 类的 `finalize()` 方法。
+        
+    - 如果重写了，且这是它第一次面临回收，JVM 会把它塞进一个名叫 `F-Queue` 的队列里，稍后由一个低优先级的线程去执行它的 `finalize()` 方法。
+        
+    - 这是对象**唯一一次“自救”的机会**（比如在 `finalize` 里强行把自己赋值给某个全局变量，重新和 GC Roots 建立联系，它就能复活）。但因为极其不可控且影响性能，现代 Java 开发中**强烈建议永远不要使用 `finalize()`**。
 
-+ **<font style="color:rgb(0, 0, 0) !important;">判断标准</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：从根对象（如虚拟机栈中的引用、静态变量、常量池引用等）出发，无法通过引用链到达该对象。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">结果</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：对象成为垃圾回收器的回收候选，但此时尚未被回收，仍占用内存。</font>
 
-**<font style="color:rgb(0, 0, 0) !important;">5. 收集阶段（Collection）</font>**
+##### 5. 空间重分配阶段（Deallocated）—— “彻底灰飞烟灭”
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;">垃圾回收器（GC）发现不可达对象后，对其进行处理：</font>
+- **物理状态**：对象没有自救，或者 `finalize()` 已经执行过了，它彻底死透了。
+    
+- **底层逻辑**：GC 根据所使用的垃圾回收算法（如复制算法、标记-清除算法、标记-整理算法），**物理抹除**这块内存上的所有数据。
+    
+- **命运终结**：这块原本属于该对象的内存空间，被 JVM 回收并重新放回可用内存池（Free List）中，等待着下一个 `new` 关键字的到来，孕育下一个全新的对象。
 
-+ **<font style="color:rgb(0, 0, 0) !important;">回收前操前</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：若对象重写了</font>`<font style="color:rgb(0, 0, 0);">finalize()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">方法（Java），虚拟机会先调用该方法（仅一次），给对象最后一次 “自救” 机会（如重新建立引用）。若对象在</font>`<font style="color:rgb(0, 0, 0);">finalize()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">中成功被引用，则会重新变为可达状态，避免被回收。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">内存回收</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：若对象未 “自救” 或未重写</font>`<font style="color:rgb(0, 0, 0);">finalize()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">，垃圾回收器会释放其占用的堆内存，清理对象相关资源（如释放文件句柄、网络连接等，需手动在</font>`<font style="color:rgb(0, 0, 0);">close()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">或</font>`<font style="color:rgb(0, 0, 0);">try-with-resources</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">中处理）。</font>
-
-**<font style="color:rgb(0, 0, 0) !important;">6. 终结阶段（Finalization）</font>**
-
-<font style="color:rgba(0, 0, 0, 0.85) !important;">对象被彻底回收后，生命周期结束：</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.85) !important;">内存空间被释放，对象的所有信息从内存中清除，无法再被访问。</font>
-+ <font style="color:rgba(0, 0, 0, 0.85) !important;">若对象关联了外部资源（如数据库连接），需确保在回收前已释放，否则可能导致资源泄漏。</font>
 
 ### <font style="color:rgb(79, 79, 79);">3、判断垃圾的方法</font>
 #### <font style="color:rgb(79, 79, 79);">1，引用计数法</font>
@@ -743,58 +808,56 @@ System.out.println(s == s2);
 + 浪费CPU资源，即使内存够用，仍然在运行时进行计数器的统计。
 + 无法解决循环引用问题，会引发内存泄露（最大的缺点）
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752393712031-cccfbcea-53a5-47a5-b00d-0d28823dee92.png)
+#### 2，三色标记（Tri-color marking）
 
-#### 2，三色标记<font style="color:rgba(0, 0, 0, 0.85);background-color:rgba(0, 0, 0, 0.04);">（Tri-color marking）</font>
-<font style="color:rgba(0, 0, 0, 0.85) !important;">三色标记（Tri-color marking）是一种用于垃圾回收（Garbage Collection, GC）的算法，属于追踪式垃圾回收的范畴。其核心思想是通过三种颜色标记对象的不同状态，以此来识别哪些对象是存活的、哪些是可以被回收的，从而在垃圾回收过程中高效地管理内存。</font>
+在 JVM 的垃圾回收底层算法中，**三色标记法（Tri-color Marking）** 是现代高并发垃圾回收器（如 CMS、G1、ZGC）的绝对核心基石。
 
-##### <font style="color:rgb(0, 0, 0);">1，三色标记的基本原理</font>
-<font style="color:rgba(0, 0, 0, 0.85) !important;">三色标记算法将对象标记为以下三种颜色</font>
+如果说以前的老旧垃圾回收器（如 Serial、Parallel）干活时必须把所有用户线程全部强行卡死（STW，Stop-The-World），那么**三色标记法就是为了“让垃圾回收线程和用户的业务线程能够同时并发运行”而发明的伟大算法。**
 
-1. **<font style="color:rgb(0, 0, 0) !important;">白色</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：表示对象尚未被垃圾回收器访问到。在初始阶段，所有对象都是白色的。如果在标记结束后，对象仍然是白色的，这意味着它不可达，会被视为垃圾并回收。</font>
-2. **<font style="color:rgb(0, 0, 0) !important;">灰色</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：表示对象已经被垃圾回收器访问过，但它的某些引用还未被处理。灰色对象是白色对象和黑色对象之间的中间状态。垃圾回收器会从灰色对象出发，继续遍历其引用的对象。</font>
-3. **<font style="color:rgb(0, 0, 0) !important;">黑色</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：表示对象已经被垃圾回收器访问过，并且它的所有引用都已经被处理完毕。黑色对象的所有引用对象都已经被标记为灰色或黑色，因此黑色对象不会再被重新处理。</font>
+##### 1. 物理定义：什么是三色？
 
-##### <font style="color:rgb(0, 0, 0);">2，三色标记的工作流程</font>
-<font style="color:rgba(0, 0, 0, 0.85) !important;">三色标记算法的工作流程可以分为以下几个步骤：</font>
+三色标记法本质上是**图的广度优先遍历（BFS）**。JVM 把堆内存里的所有对象看作一张庞大的网（对象引用图）。为了在遍历这张网时不迷路，GC 线程会给对象强行打上三种颜色的物理标签：
 
-1. **<font style="color:rgb(0, 0, 0) !important;">初始标记</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：垃圾回收器从根对象（如栈、静态变量等）开始，将直接可达的对象标记为灰色，并将这些灰色对象放入待处理队列。</font>
-2. **<font style="color:rgb(0, 0, 0) !important;">并发标记</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：垃圾回收器从灰色对象队列中取出对象，将其标记为黑色，并将其引用的所有白色对象标记为灰色，然后将这些新标记的灰色对象加入队列。这个过程会持续进行，直到灰色对象队列为空。</font>
-3. **<font style="color:rgb(0, 0, 0) !important;">最终标记</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：在并发标记阶段，可能会有新的引用关系被创建或修改，导致一些应该被标记的对象没有被标记（即漏标问题）。最终标记阶段会处理这些增量更新，确保所有存活对象都被正确标记。</font>
-4. **<font style="color:rgb(0, 0, 0) !important;">垃圾回收</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：标记完成后，所有白色对象都被视为垃圾，垃圾回收器会回收它们占用的内存空间。</font>
+- ⚪ **白色（White）—— “还没查到的未知地带”**
+    
+    - **状态**：表示该对象尚未被垃圾回收器访问过。
+        
+    - **命运**：在 GC 开始时，所有对象都是白色的。当 GC 彻底结束后，如果还有对象是白色的，说明没有任何存活对象引用它，它就是不可达的**绝对垃圾**，将被物理抹除。
+        
+- 🔘 **灰色（Grey）—— “查了一半的待办事项”**
+    
+    - **状态**：表示该对象已经被 GC 访问过了，但它内部**引用的其他对象还没来得及全部扫描**。
+        
+    - **命运**：它是 GC 扫描的前线阵地。灰色对象就像是装满线索的箱子，GC 必须把灰色箱子里的线索全部顺藤摸瓜找完，才能把它涂成黑色。
+        
+- ⚫ **黑色（Black）—— “查到底的绝对安全区”**
+    
+    - **状态**：表示该对象已经被 GC 访问过，且它内部**引用的所有直接子对象也都已经全部扫描过了**。
+        
+    - **命运**：黑色对象是绝对存活的。GC 线程在后续的工作中，**绝对不会再回头去扫描黑色对象**。
 
-###### <font style="color:rgb(0, 0, 0) !important;">漏标问题</font>
-###### **<font style="color:rgb(0, 0, 0) !important;">1，漏标问题的产生原因</font>**
-<font style="color:rgba(0, 0, 0, 0.85) !important;">三色标记算法允许垃圾回收线程与应用程序线程并发执行（即标记过程中，用户线程仍在修改对象的引用关系）。这种并发特性可能导致：  
-</font>**<font style="color:rgb(0, 0, 0) !important;">原本应该被标记为存活的对象，最终被标记为白色（垃圾）</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">，即 “漏标”。</font>
+##### 2. 正常运转流程：“像墨水一样蔓延”
 
-###### **<font style="color:rgb(0, 0, 0) !important;">2，漏标问题的触发条件</font>**
-<font style="color:rgba(0, 0, 0, 0.85) !important;">漏标需要同时满足以下两个条件（缺一不可）：</font>  
+1. **初始状态**：只有极其少数的根节点（GC Roots，如栈里的局部变量）被涂成**灰色**，其余全堆的几百万个对象全是**白色**。
+    
+2. **并发标记（核心工作）**：GC 线程从灰色对象出发，找到它引用的白色对象，把它们涂成灰色。当一个灰色对象的所有子节点都变成灰色后，这个灰对象自己就“功德圆满”，变成**黑色**。
+    
+3. **结束状态**：就这样一层一层像滴在纸上的墨水一样蔓延，直到图里再也没有**灰色**对象。此时，剩下的所有**白色**对象统统作为垃圾被回收。
 
+##### 3. 致命的物理硬伤：“漏标”问题（对象神秘失踪）
 
-1. **<font style="color:rgb(0, 0, 0) !important;">新增引用</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：一个</font>**<font style="color:rgb(0, 0, 0) !important;">黑色对象</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">（已完成标记，其引用被认为已处理完毕）新增了对一个</font>**<font style="color:rgb(0, 0, 0) !important;">白色对象</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">的引用。</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">黑色对象的引用被视为 “已处理”，垃圾回收器不会再遍历其引用，因此新增的白色对象引用可能被忽略。</font>
-2. **<font style="color:rgb(0, 0, 0) !important;">引用删除</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：所有</font>**<font style="color:rgb(0, 0, 0) !important;">灰色对象</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">（正在处理其引用的对象）对该白色对象的直接或间接引用</font>**<font style="color:rgb(0, 0, 0) !important;">全部被删除</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">。</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">灰色对象是标记过程的 “桥梁”，若它们对白色对象的引用被删除，白色对象就失去了被标记的唯一途径，最终保持白色。</font>
+三色标记法如果是一条狗自己慢慢闻，绝不出错。但不要忘了，它是**并发执行**的！就在 GC 线程一点点给对象涂色的同时，**用户的业务线程还在飞速地修改对象的引用关系！**
 
-###### **<font style="color:rgb(0, 0, 0) !important;">3，举例说明</font>**
-<font style="color:rgba(0, 0, 0, 0.85) !important;">假设初始状态：</font>
+这就导致了一个极其恐怖的致命 Bug——**漏标（原本活着的对象，被错误地当成白色垃圾杀死了）**。
 
-+ <font style="color:rgba(0, 0, 0, 0.85) !important;">根对象引用灰色对象 A（A 的引用正在处理），A 引用白色对象 B（未被标记）。</font>
+发生漏标，**必须同时满足以下两个物理条件**（极其重要的高频面试考点）： 假设有对象 A（黑）、B（灰）、C（白）。B 原本引用着 C。
 
-<font style="color:rgba(0, 0, 0, 0.85) !important;">并发过程中发生两个操作：</font>
+1. **条件一（黑色牵白）**：用户线程让**黑色对象 A** 突然直接引用了**白色对象 C**（代码写了 `A.c = C`）。
+    
+2. **条件二（灰色断白）**：用户线程又让**灰色对象 B** 断开了对**白色对象 C** 的引用（代码写了 `B.c = null`）。
+    
 
-1. <font style="color:rgba(0, 0, 0, 0.85) !important;">用户线程删除 A 对 B 的引用（满足条件 2：灰色对象 A 对 B 的引用消失）。</font>
-2. <font style="color:rgba(0, 0, 0, 0.85) !important;">用户线程让黑色对象 C（已完成标记）新增对 B 的引用（满足条件 1：黑色对象 C 引用 B）。</font>
-
-<font style="color:rgba(0, 0, 0, 0.85) !important;">结果：</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.85) !important;">垃圾回收器不会再处理黑色对象 C 的引用，也不会再通过 A 遍历到 B，导致 B 始终为白色，被误判为垃圾。</font>
-
-###### **<font style="color:rgb(0, 0, 0) !important;">4，漏标问题的影响</font>**
-+ **<font style="color:rgb(0, 0, 0) !important;">程序崩溃</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：被误标的存活对象被回收后，应用程序线程若继续访问该对象，会导致空指针异常（NPE）或数据错误。</font>
-+ <font style="color:rgba(0, 0, 0, 0.85) !important;">这是三色标记算法必须解决的核心问题，否则并发垃圾回收无法保证正确性。</font>
+**恐怖后果**： 因为条件二，GC 线程沿着 B 往下找，再也找不到 C 了。 因为条件一，C 实际上是被黑色的 A 强引用着，它绝对还活着！**但是，GC 算法规定，绝对不会回头再去扫描黑色对象 A！** 最终，可怜的 C 对象因为没有被扫描到，直到最后依然是**白色**，被当场误杀清理。这就是灾难级的内存故障。
 
 #### 3，可达性分析算法
 通过一系列称为GC Roots的根对象作为起点，从这些根对象出发，遍历所有可达的对象，未被遍历到的对象则被视为垃圾。可达性分析算法的分析工作必须在一个保障一致性的快照中进行，否则结果的准确性无法保证，这也是导致GC进行时必须Stop The World的一个原因。
@@ -807,66 +870,110 @@ System.out.println(s == s2);
 + 遍历对象图：从GC Roots出发，递归遍历所有可达的对象，并标记这些对象为存活对象。
 + 清除不可达对象：未被标记的对象则被视为不可达对象，可以被回收。
 
-### <font style="color:rgb(79, 79, 79);">4，四种引用</font>
-<!-- 这是一张图片，ocr 内容为： -->
+### 4，四种引用
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752406926360-1bf8e6b9-ba8d-4513-b604-d2babaabce61.png)
 
-1. **强引用**
 
-只有所有 GC Roots 对象都不通过【强引用】引用该对象，该对象才能被垃圾回收
+在 JDK 1.2 之前，Java 中的“引用”概念非常死板：一个对象只有“被引用”和“未被引用”两种绝对状态。这导致开发者无法实现类似“缓存”的灵活功能（即：内存够用时保留它，内存不够时为了防止 OOM 再回收它）。
 
-2. **软引用（SoftReference）**
+为了把对象的生杀大权更精细地交给开发者，JDK 1.2 之后，JVM 将引用的物理级别扩充为了**四种**。
 
-仅有软引用引用该对象时，在垃圾回收后，内存仍不足时会再次出发垃圾回收，回收软引用对象
+#### 1. 强引用（Strong Reference）—— “死也不放手”
 
-可以配合引用队列来释放软引用自身
+- **物理定义**：这是我们在 Java 中最常见、最普通的引用方式。只要你写了类似 `Object obj = new Object();`，这个 `obj` 就是强引用。
+    
+- **GC 命运：绝对豁免权。** 只要强引用还存在（即没有任何地方执行 `obj = null` 把它断开，或者方法没有执行结束导致出栈），垃圾回收器（GC）就**绝对不敢物理触碰这个对象**。
+    
+- **极端后果**：即使 JVM 的堆内存马上就要彻底撑爆了，GC 宁愿抛出 `OutOfMemoryError` 导致整个系统崩溃重启，也绝不会去回收一个被强引用着的对象。
+    
+- **应用场景**：99% 的日常业务开发。
+    
 
-3. **弱引用（WeakReference）**
+#### 2. 软引用（Soft Reference）—— “大难临头各自飞”
 
-仅有弱引用引用该对象时，在垃圾回收时，无论内存是否充足，都会回收弱引用对象
+- **物理定义**：通过 `java.lang.ref.SoftReference` 类来实现的引用。
+    
+- **GC 命运：看内存脸色。** 如果一个对象**只被**软引用指向（没有强引用牵着它）：
+    
+    - 当系统内存**非常充足**时，GC 发生时会对它视而不见，它依然安安稳稳地活在堆内存里。
+        
+    - 当系统内存**极度吃紧，马上就要发生 OOM 之前**，GC 会在爆发之前进行最后一次大规模扫荡，此时它会狠心把这些软引用对象全部物理抹除，试图救系统一命。
+    
+- **应用场景**：**内存敏感的高速缓存。** 比如在 Android 开发中加载大量高清图片，或者在服务器端缓存大量的网页静态 HTML。用软引用装这些数据，内存够用时用户访问极快；内存不够时，自动抛弃这些缓存保全系统不死，大不了下次再从硬盘/数据库重新读。
 
-可以配合引用队列来释放弱引用自身
+#### 3. 弱引用（Weak Reference）—— “见光死”
 
-4. **虚引用（PhantomReference）**
+- **物理定义**：通过 `java.lang.ref.WeakReference` 类来实现的引用。
+    
+- **GC 命运：只要发现，格杀勿论。** 如果一个对象**只被**弱引用指向，它的生命力极其脆弱。无论当前系统的物理内存是堆积如山还是极度枯竭，只要触发了垃圾回收（比如最普通的 Minor GC），GC 线程一旦扫描到它，就会**当场将它回收**。它的寿命只能苟延残喘到下一次 GC 发生之前。
+    
+- **应用场景**：**防止内存泄漏的终极武器。** 最经典的底层应用是 `ThreadLocal` 的内部类 `ThreadLocalMap`（它的 Key 是弱引用）以及 `WeakHashMap`。当外界的强引用断开时，系统借助弱引用让这些不再使用的键值对随着下一次 GC 自动消亡，防止在长生命周期的线程中发生严重的内存泄漏。
 
-必须配合引用队列使用，主要配合 ByteBuffer 使用，被引用对象回收时，会将虚引用入队，
+#### 4. 虚引用（Phantom Reference）—— “形同虚设的幽灵”
 
-由 Reference Handler 线程调用虚引用相关方法释放直接内存
+- **物理定义**：通过 `java.lang.ref.PhantomReference` 类实现。它必须和一个引用队列（ReferenceQueue）联合使用。
+    
+- **GC 命运：随时死亡，查无此人。** 它是最神秘的引用。你**永远无法**通过虚引用拿到它背后的真实对象（调用它的 `get()` 方法永远返回 `null`）。就好像它根本不存在一样。
+    
+- **核心作用：仅仅为了留下一句“临终遗言”。** 它唯一的物理意义，就是在对象被 GC 彻底回收的那个瞬间，JVM 会把这个虚引用对象物理塞进那个绑定的 `ReferenceQueue`（引用队列）中。
+    
+- **底层绝杀场景（联动之前的知识点）：直接内存（Direct Memory）的释放！** 我们上一节提到的 NIO `DirectByteBuffer`。直接内存（本地内存）是不归 JVM 管的，那 JVM 是怎么知道什么时候去释放外面的直接内存呢？ 秘密就在于：堆里的 `DirectByteBuffer` 对象被一个名为 `Cleaner` 的**虚引用**牵着。当 `DirectByteBuffer` 被当成垃圾回收时，`Cleaner` 虚引用接到死亡通知进入队列，随后系统后台线程从队列里拿到这个通知，立刻调用底层的 C++ 方法去物理释放操作系统外面的直接内存！这就是它被称为底层“外挂”的原因。
 
-5. **终结器引用（FinalReference）**
+### 5，垃圾回收算法
+#### 1. 标记-清除算法（Mark-Sweep）—— “原地爆破，留下弹坑”
+这是最古老、最基础的垃圾回收算法。
 
-无需手动编码，但其内部配合引用队列使用，在垃圾回收时，终结器引用入队（被引用对象暂时没有被回收），再由 Finalizer 线程通过终结器引用找到被引用对象并调用它的 finalize 方法，第二次 GC 时才能回收被引用对象。
+- **物理过程**：
+    
+    1. **标记**：顺着 GC Roots 遍历，把所有存活的对象打上标记。
+        
+    2. **清除**：直接把没有标记的（死亡的）对象在物理内存中就地抹除。
+        
+- **核心优点**：非常简单，极其粗暴，不需要移动存活对象的位置。
+    
+- **致命缺点（物理硬伤）**：**内存碎片化（Memory Fragmentation）**。 被清除的垃圾对象散落在内存的各个角落，清理完后，内存里就像马蜂窝一样全是不连续的“空洞”。如果此时系统需要分配一个需要连续内存的大对象（比如大数组），哪怕总体空闲内存足够，也会因为找不到一块完整的连续空间而被迫提前触发下一次彻底的 Full GC。
 
-### 5，<font style="color:rgb(79, 79, 79);">垃圾回收算法</font>
-#### <font style="color:rgb(79, 79, 79);">1，标记清除</font>
-<font style="color:rgb(77, 77, 77);">定义：Mark Sweep</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">速度较快</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">会产生内存碎片</font>
-
-<!-- 这是一张图片，ocr 内容为： -->
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752410940262-36212219-d99f-4ccd-8e67-d47d545f3de6.png)
 
-#### <font style="color:rgb(79, 79, 79);">2，标记整理</font>
-<font style="color:rgb(77, 77, 77);">Mark Compact</font>
+#### 2. 标记-复制算法（Mark-Copy）—— “狡兔三窟，折半浪费”
+为了解决“内存碎片”这个恶心的问题，复制算法应运而生。
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">速度慢</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">没有内存碎片</font>
-
-<!-- 这是一张图片，ocr 内容为： -->
+- **物理过程**：
+    
+    1. 将物理可用内存**等比划分为两块**（比如 A 区和 B 区）。平时只用 A 区。
+        
+    2. 当 A 区满了触发 GC 时，把 A 区里**还活着**的对象，像排队一样**按顺序物理复制**到 B 区的连续空间里。
+        
+    3. 把 A 区整块内存直接“格式化”清空。之后再分配对象就在 B 区进行，如此两边来回倒腾。
+        
+- **核心优点**：每次清理完，存活的对象都整整齐齐地排列在一侧，**绝对不会产生内存碎片**，只要移动堆顶指针就能飞速分配新内存。
+    
+- **致命缺点**：**极其浪费内存**。你买了一条 16GB 的内存条，这种算法强制要求你只能用 8GB，另外 8GB 必须永远空着用来当“复制避难所”。
+    
+- **工业级应用**：**极其适合新生代（Young Generation）**。因为官方统计新生代 98% 的对象都是朝生夕死的“短命鬼”，真正能存活下来的极少。所以 JVM 把新生代优化成了 `Eden:Survivor0:Survivor1 = 8:1:1`，每次只用 10% 的空间当避难所，完美发挥了复制算法无碎片的优势，又极大地减少了内存浪费。
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752410952703-d98ac62d-cfca-4af1-a645-998ac10736e4.png)
 
-#### <font style="color:rgb(79, 79, 79);">3，复制</font>
-<font style="color:rgb(77, 77, 77);">Copy</font>
+#### 3. 标记-整理算法（Mark-Compact）—— “乾坤大挪移”
+如果对象的存活率极高（比如老年代里全是钉子户），用复制算法不仅没地方放，复制起来还极其耗时。这时候就需要“标记-整理”。
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">不会有内存碎片</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">需要占用两倍内存空间</font>
-
-<!-- 这是一张图片，ocr 内容为： -->
+- **物理过程**：
+    
+    1. **标记**：和前面一样，找出活对象。
+        
+    2. **整理（压缩）**：让所有存活的对象都向内存空间的一端**物理滑动（推平）**。
+        
+    3. **清理**：直接把边界以外的所有内存空间一刀切全部清理掉。
+        
+- **核心优点**：**既没有内存碎片，也不需要浪费一半的空闲空间。**
+    
+- **致命缺点**：**慢！极其沉重！** 移动存活对象是一项极其昂贵的物理操作（尤其是老年代对象体积大且关联复杂）。移动对象时，必须把所有指向这些对象的引用地址全部更新一遍，这通常需要暂停所有用户线程（STW，Stop The World）。
+    
+- **工业级应用**：通常用于**老年代（Old Generation）**的兜底 Full GC。
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752410969713-28636dd2-30da-42b0-a819-fd36fe4a3e16.png)
 
-### <font style="color:rgb(79, 79, 79);">6，分代垃圾回收</font>
-<!-- 这是一张图片，ocr 内容为： -->
+
+
+### 6，分代垃圾回收
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752411856549-e8bf6ff5-67b8-4080-bfe5-5e6158d38474.png)
 
 + 新创建的对象首先分配在 eden 区
@@ -874,8 +981,6 @@ System.out.println(s == s2);
 + minor gc 会引发 stop the world，暂停其他线程，等垃圾回收结束后，恢复用户线程运行
 + 当幸存区对象的寿命超过阈值时，会晋升到老年代，最大的寿命是 15（4bit）
 + 当老年代空间不足时，会先触发 minor gc，如果空间仍然不足，那么就触发 full fc ，停止的时间更长！
-
-4、垃圾回收器
 
 #### 1，相关概念
 + 并行收集：指多条垃圾收集线程并行工作，但此时用户线程仍处于等待状态。
@@ -886,7 +991,6 @@ System.out.println(s == s2);
 + <font style="color:rgba(0, 0, 0, 0.75);">单线程。</font>
 + <font style="color:rgba(0, 0, 0, 0.75);">堆内存较少，适合个人电脑。</font>
 
-<!-- 这是一张图片，ocr 内容为： -->
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752432898394-1bbcf226-c309-49b1-be12-8d86b51371c0.png)
 
 安全点：让其他线程都在这个点停下来，以免垃圾回收时移动对象地址，使得其他线程找不到被移动的对象
@@ -897,7 +1001,7 @@ System.out.println(s == s2);
 
 Serial 收集器是最基本的、发展历史最悠久的收集器
 
-特点：单线程、简单高效（与其他收集器的单线程相比），采用复制算法。对于限定单个 CPU 的环境来说，Serial 收集器由于没有线程交互的开销，专心做垃圾收集自然可以获得最高的单线程收集效率。收集器进行垃圾回收时，必须暂停其他所有的工作线程，直到它结束（Stop The World）！
+特点：单线程、简单高效（与其他收集器的单线程相比），采用复制算法。对于限定单个 CPU 的环境来说，Serial 收集器由于没有线程交互的开销，专心做垃圾收集自然可以获得最高的单线程收集效率。收集器进行垃圾回收时，必须暂停其他所有的工作线程，直到它结束 **（Stop The World）** ！
 
 **ParNew 收集器**
 
@@ -909,361 +1013,296 @@ ParNew 收集器其实就是 Serial 收集器的多线程版本
 
 Serial Old 是 Serial 收集器的老年代版本
 
-特点：同样是单线程收集器，采用标记-整理算法
+特点：同样是单线程收集器，采用**标记-整理算法**
 
-#### <font style="color:rgb(79, 79, 79);">2，吞吐量优先</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">多线程。</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">堆内存较大，多核 cpu。</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">让单位时间内，STW 的时间最短。</font>
+#### 2，吞吐量优先
 
-<!-- 这是一张图片，ocr 内容为： -->
+如果说 CMS 和 G1 收集器是为了“让用户感觉不到卡顿（低延迟）”而生的，那么 **Parallel Scavenge 的唯一信仰就是“最高效地利用 CPU 算完业务（高吞吐量）”**。
+
+- **物理表现**：它根本不在乎单次垃圾回收会卡死（STW）你 100 毫秒还是 300 毫秒，它只在乎在过去的 1 个小时里，CPU 有多少时间是在真正跑业务，有多少时间是在扫垃圾。
+    
+- **适用场景**：它是后台数据批处理、科学计算、报表生成的绝对王者。
+	
+- **Parallel Scavenge** 收集器底层使用的是 **标记-复制算法（Mark-Copy）**。
+
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752432989626-96553f1a-e2d5-4355-a21d-638d16a27748.png)
 
-`**Parallel Scavenge**`** 收集器：**与吞吐量关系密切，故也称为吞吐量优先收集器。
 
-特点：属于新生代收集器也是采用复制算法的收集器（用到了新生代的幸存区），又是并行的多线程收集器（与 ParNew 收集器类似）。该收集器的目标是达到一个可控制的吞吐量。还有一个值得关注的点是：GC自适应调节策略（与 ParNew 收集器最重要的一个区别）。
+在以前的年代，JVM 调优被称为“玄学”，因为你需要手动精准控制 `-Xmn`（新生代大小）、`-XX:SurvivorRatio`（Eden和幸存区比例）、`-XX:PretenureSizeThreshold`（晋升年龄）等十几个参数。这就像开手动挡汽车一样繁琐。
 
-**GC自适应调节策略：**Parallel Scavenge 收集器可设置 -XX:+UseAdptiveSizePolicy 参数。
+**`-XX:+UseAdaptiveSizePolicy` 的物理本质，就是给 JVM 装上了一套“AI 自动驾驶系统”。**
 
-当开关打开时不需要手动指定新生代的大小（-Xmn）、Eden 与 Survivor 区的比例（-XX:SurvivorRation）、
+- **运转逻辑**：当这个开关打开后，你不再需要去微调那些复杂的内存分配比例了。JVM 在运行过程中，会像一个精算师一样，疯狂收集当前的 GC 频率、每次的耗时、对象的晋升速度等物理数据。
+    
+- **动态变形**：然后，JVM 会在运行时**偷偷地、物理地放大或缩小 Eden 区和 Survivor 区的边界**，甚至动态调整对象晋升老年代的年龄门槛。这一切，都是为了尽可能满足你设定的“终极业务指标”。
 
-晋升老年代的对象年龄（-XX:PretenureSizeThreshold）等，虚拟机会根据系统的运行状况收集性能监控信息，动态设置这些参数以提供最优的停顿时间和最高的吞吐量，这种调节方式称为 GC 的自适应调节策略。
 
-`**Parallel Scavenge**`** 收集器使用两个参数控制吞吐量：**
+既然交给了“自动驾驶”，你总得给它设定一个目标吧？Parallel Scavenge 提供了两个可以互相打架的“KPI 指标”：
 
-XX:MaxGCPauseMillis=ms 控制最大的垃圾收集停顿时间（默认200ms）
+- **指标一：`-XX:MaxGCPauseMillis`（最大停顿时间限制）**
+    
+    - **物理副作用**：如果你把这个值设得极小（比如强行要求每次卡顿不能超过 50ms）。JVM 为了完成你的 KPI，唯一的物理办法就是**把新生代（Eden区）的空间狠狠缩小**。
+        
+    - **后果**：空间小了，垃圾确实扫得快了（满足了 50ms），但代价是**垃圾回收的频率会极度飙升**，导致 CPU 频繁介入 GC，最终**吞吐量惨跌**。
+        
+- **指标二：`-XX:GCTimeRatio=N`（吞吐量大小）**
+    
+    - **公式**：吞吐量 = `1 / (1 + N)`。比如设定为 99，代表允许最大 1% 的时间用于 GC。
+        
+    - **物理副作用**：为了让 GC 时间占比极小，JVM 的物理做法是**疯狂扩大新生代内存**。
+        
+    - **后果**：空间大了，好半天才触发一次 GC（吞吐量保住了），但一旦触发，因为积累的垃圾太多，清理起来极其耗时，**单次停顿时间（MaxGCPauseMillis）会严重超标**。
 
-XX:GCTimeRatio=rario 直接设置吞吐量的大小
+**结论**：这两个参数是**水火不容**的。自适应策略（AdaptiveSizePolicy）的底层工作，就是在这两个极端指标之间，疯狂地寻找一个最不坏的物理平衡点。
 
-`**Parallel Old**`** 收集器：**是 Parallel Scavenge 收集器的老年代版本
+**黄金搭档**：Parallel Old 收集器
 
-特点：多线程，采用标记-整理算法（老年代没有幸存区）。
+- **为什么需要它？**：在 Parallel Old 诞生之前，Parallel Scavenge 处于一个极其尴尬的境地。新生代虽然是多线程并行飞速清理，但老年代只能被迫配对使用老旧的 `Serial Old`（单线程收集器）。这就好比一条 8 车道的高速公路，到了收费站突然变成了单行道，吞吐量优势在老年代被彻底拖垮。
+    
+- **物理特性**：为了打破这个瓶颈，`Parallel Old` 应运而生。它是真正的**多线程并行**收集，并且采用**标记-整理（Mark-Compact）** 算法。
+    
+- **绝杀表现**：当老年代触发 Full GC 时，多条线程同时出动，不仅飞速标记垃圾，还能像推土机一样把存活的对象物理推平、紧凑对齐，**坚决不留任何内存碎片**。这套组合真正实现了从新生代到老年代的全链路高吞吐量。
 
 #### <font style="color:rgb(79, 79, 79);">3，响应时间优先</font>
 + <font style="color:rgba(0, 0, 0, 0.75);">多线程。</font>
 + <font style="color:rgba(0, 0, 0, 0.75);">堆内存较大，多核 cpu。</font>
 + <font style="color:rgba(0, 0, 0, 0.75);">尽可能让 STW 的单次时间最短。</font>
 
-<!-- 这是一张图片，ocr 内容为： -->
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752433080211-b170b870-e69f-4350-9120-f07b2148dc7e.png)
 
-**CMS 收集器：**Concurrent Mark Sweep，一种以获取最短回收停顿时间为目标的老年代收集器
+**CMS 收集器：** Concurrent Mark Sweep，一种以获取最短回收停顿时间为目标的老年代收集器
 
-**特点：**基于标记-清除算法实现。并发收集、低停顿，但是会产生内存碎片。
+**特点：** 基于**标记-清除算法**实现。并发收集、低停顿，但是会产生内存碎片。
 
-**应用场景：**适用于注重服务的响应速度，希望系统停顿时间最短，给用户带来更好的体验等场景下。如 web 程序、b/s 服务。
+**应用场景：** 适用于注重服务的响应速度，希望系统停顿时间最短，给用户带来更好的体验等场景下。如 web 程序、b/s 服务。
 
 **CMS 收集器的运行过程分为下列4步：**
 
-**初始标记：**标记 GC Roots 能直接到的对象。速度很快但是仍存在 Stop The World 问题。
+- **初始标记：** 标记 GC Roots 能直接到的对象。速度很快但是仍存在 Stop The World 问题。
 
-**并发标记：**进行 GC Roots Tracing 的过程，找出存活对象且用户线程可并发执行。
+- **并发标记：** 进行 GC Roots Tracing 的过程，找出存活对象且用户线程可并发执行。
 
-**重新标记：**为了修正并发标记期间因用户程序继续运行而导致标记产生变动的那一部分对象的标记记录。仍然存在 Stop The World 问题
+- **重新标记：** 为了修正并发标记期间因用户程序继续运行而导致标记产生变动的那一部分对象的标记记录。仍然存在 Stop The World 问题
 
-**并发清除：**对标记的对象进行清除回收，清除的过程中，可能任然会有新的垃圾产生，这些垃圾就叫浮动垃圾，如果当用户需要存入一个很大的对象时，新生代放不下去，老年代由于浮动垃圾过多，就会退化为 serial Old 收集器，将老年代垃圾进行标记-整理，当然这也是很耗费时间的！
+- **并发清除：** 对标记的对象进行清除回收，清除的过程中，可能任然会有新的垃圾产生，这些垃圾就叫浮动垃圾，如果当用户需要存入一个很大的对象时，新生代放不下去，老年代由于浮动垃圾过多，就会退化为 serial Old 收集器，将老年代垃圾进行标记-整理，当然这也是很耗费时间的！
 
 CMS 收集器的内存回收过程是与用户线程一起并发执行的，可以搭配 ParNew 收集器（多线程，新生代，复制算法）与 Serial Old 收集器（单线程，老年代，标记-整理算法）使用。
 
 ##### CMS退化
-<font style="color:rgba(0, 0, 0, 0.85) !important;">CMS（Concurrent Mark Sweep）在以下情况下会退化为</font>**<font style="color:rgb(0, 0, 0) !important;">Serial Old 收集器</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">进行 Full GC，导致长时间的 STW（Stop The World）停顿：</font>
 
-###### **<font style="color:rgb(0, 0, 0) !important;">1. 并发模式失败（Concurrent Mode Failure）</font>**
-+ **<font style="color:rgb(0, 0, 0) !important;">触发条件</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">在 CMS 的</font>**<font style="color:rgb(0, 0, 0) !important;">并发标记</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">或</font>**<font style="color:rgb(0, 0, 0) !important;">并发清除</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">阶段，用户线程持续创建新对象，导致</font>**<font style="color:rgb(0, 0, 0) !important;">老年代空间不足以容纳晋升的对象</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">原因</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">CMS 的并发收集速度跟不上对象晋升到老年代的速度，例如：</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">新生代对象存活率过高，晋升对象过多。</font>
-    - `<font style="color:rgb(0, 0, 0);">-XX:CMSInitiatingOccupancyFraction</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">参数设置过高，导致 CMS 启动过晚。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">解决方法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">降低</font>`<font style="color:rgb(0, 0, 0);">CMSInitiatingOccupancyFraction</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">（如设为 60%），提前触发 CMS GC，预留更多空间。</font>
+在 JVM 的垃圾回收发展史上，**CMS（Concurrent Mark Sweep）** 收集器是一座里程碑，它是 JVM 第一次真正意义上实现了“并发收集”，将停顿时间（STW）从秒级压缩到了毫秒级。
 
-###### **<font style="color:rgb(0, 0, 0) !important;">2. 晋升失败（Promotion Failure）</font>**
-+ **<font style="color:rgb(0, 0, 0) !important;">触发条件</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">新生代对象晋升到老年代时，老年代剩余空间</font>**<font style="color:rgb(0, 0, 0) !important;">不足以容纳该对象</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">，或因</font>**<font style="color:rgb(0, 0, 0) !important;">内存碎片</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">导致无法找到连续空间。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">原因</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">CMS 采用</font>**<font style="color:rgb(0, 0, 0) !important;">标记 - 清除算法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">，会产生内存碎片，导致大对象无法分配。</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">浮动垃圾（Floating Garbage）过多，占用老年代空间。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">解决方法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">启用</font>`<font style="color:rgb(0, 0, 0);">-XX:+UseCMSCompactAtFullCollection</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">（默认开启），在 Full GC 时进行内存整理。</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">增加</font>`<font style="color:rgb(0, 0, 0);">-XX:CMSFullGCsBeforeCompaction</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">参数（如设为 0），每次 Full GC 后都进行整理。</font>
+然而，CMS 有一个极其致命的物理硬伤，也就是面试中最常考的“CMS 退化（Degradation）”。
 
-###### **<font style="color:rgb(0, 0, 0) !important;">3. 大对象直接分配到老年代</font>**
-+ **<font style="color:rgb(0, 0, 0) !important;">触发条件</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">当创建的</font>**<font style="color:rgb(0, 0, 0) !important;">大对象</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">（如数组、大集合）超过</font>`<font style="color:rgb(0, 0, 0);">-XX:PretenureSizeThreshold</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">阈值时，会直接在老年代分配。若此时老年代空间不足，触发 Full GC。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">解决方法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">调整</font>`<font style="color:rgb(0, 0, 0);">PretenureSizeThreshold</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">参数，避免过小对象直接进入老年代。</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">增加堆内存或老年代空间比例。</font>
+一句话通俗解释：**CMS 原本是一个西装革履、和用户线程有说有笑并发扫地的绅士。但如果由于某些极端原因，垃圾实在扫不过来了，它就会瞬间心态崩溃，直接掀桌子，把所有用户线程强行赶出房间（爆发史诗级 STW 卡死），然后自己变成一个极其低效的单线程扫地大妈（Serial Old）去慢慢清理。**
 
-###### **<font style="color:rgb(0, 0, 0) !important;">4. 显示调用 System.gc ()</font>**
-+ **<font style="color:rgb(0, 0, 0) !important;">触发条件</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">代码中显式调用</font>`<font style="color:rgb(0, 0, 0);">System.gc()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">，且未通过</font>`<font style="color:rgb(0, 0, 0);">-XX:+DisableExplicitGC</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">禁用时，CMS 会触发 Full GC。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">解决方法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">禁止代码中使用</font>`<font style="color:rgb(0, 0, 0);">System.gc()</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">。</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">启用</font>`<font style="color:rgb(0, 0, 0);">-XX:+DisableExplicitGC</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">参数忽略显式 GC 请求。</font>
+###### 1. 导火索一：并发模式失败（Concurrent Mode Failure）
 
-###### **<font style="color:rgb(0, 0, 0) !important;">5. Metaspace 空间不足</font>**
-+ **<font style="color:rgb(0, 0, 0) !important;">触发条件</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">JDK 8 + 中，元空间（Metaspace）存储类元数据，若元空间不足，会触发 Full GC。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">原因</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">动态生成大量类（如反射、CGLIB 代理）。</font>
-    - `<font style="color:rgb(0, 0, 0);">-XX:MetaspaceSize</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">或</font>`<font style="color:rgb(0, 0, 0);">-XX:MaxMetaspaceSize</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">设置过小。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">解决方法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">增加元空间大小：</font>`<font style="color:rgb(0, 0, 0);">-XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">。</font>
-    - <font style="color:rgba(0, 0, 0, 0.85) !important;">使用</font>`<font style="color:rgb(0, 0, 0);">-XX:+CMSClassUnloadingEnabled</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">允许 CMS 回收无用类。</font>
+- **物理场景**：CMS 的最大特点是“边污染，边清理”。GC 线程在清理老年代垃圾的同时，用户的业务线程还在飞速运行，不断产生新的对象（浮动垃圾），甚至不断有新生代的对象晋升到老年代。
+    
+- **崩溃瞬间**：如果用户的业务流量太大，**产生垃圾的速度，远远超过了 CMS 线程并发清理的速度**。结果就是，CMS 还没扫完，老年代的物理内存就已经被彻底塞满（达到 100%）。
+    
+- **抛出异常**：此时，JVM 会无奈地抛出 `Concurrent Mode Failure`。
 
-###### **<font style="color:rgb(0, 0, 0) !important;">6. 初始标记失败</font>**
-+ **<font style="color:rgb(0, 0, 0) !important;">触发条件</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">在 CMS 的</font>**<font style="color:rgb(0, 0, 0) !important;">初始标记阶段</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">（STW），若老年代空间不足，无法完成根对象的标记，退化为 Serial Old。</font>
-+ **<font style="color:rgb(0, 0, 0) !important;">解决方法</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：  
-</font><font style="color:rgba(0, 0, 0, 0.85) !important;">同 “并发模式失败”，调整</font>`<font style="color:rgb(0, 0, 0);">CMSInitiatingOccupancyFraction</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">参数。</font>
+###### 2. 导火索二：晋升失败（Promotion Failure / 空间碎片化）
 
-###### **<font style="color:rgb(0, 0, 0) !important;">总结</font>**
-<font style="color:rgba(0, 0, 0, 0.85) !important;">CMS 退化为 Serial Old 的核心原因是</font>**<font style="color:rgb(0, 0, 0) !important;">老年代空间不足</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">或</font>**<font style="color:rgb(0, 0, 0) !important;">内存碎片</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">，导致无法在并发模式下完成垃圾回收。优化方向包括：</font>
+- **物理场景**：CMS 采用的是“标记-清除（Mark-Sweep）”**算法。我们在前面讲过，这种算法最大的副作用就是会产生极其严重的**内存碎片。
+    
+- **崩溃瞬间**：系统跑了几天后，老年代的内存像马蜂窝一样全是不连续的空洞。此时，新生代发生 Minor GC，有一批对象（或者一个超大的数组）需要晋升到老年代。虽然老年代**总的剩余空间**还很大，但**没有任何一块连续的物理空间**能装得下这个大对象。
+    
+- **抛出异常**：对象放不进去，引发 `Promotion Failure`。
 
-1. **<font style="color:rgb(0, 0, 0) !important;">提前触发 CMS</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：降低</font>`<font style="color:rgb(0, 0, 0);">CMSInitiatingOccupancyFraction</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">。</font>
-2. **<font style="color:rgb(0, 0, 0) !important;">减少内存碎片</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：启用</font>`<font style="color:rgb(0, 0, 0);">-XX:+UseCMSCompactAtFullCollection</font>`<font style="color:rgba(0, 0, 0, 0.85) !important;">。</font>
-3. **<font style="color:rgb(0, 0, 0) !important;">控制对象晋升</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：避免大对象直接进入老年代，减少浮动垃圾。</font>
-4. **<font style="color:rgb(0, 0, 0) !important;">监控与调优</font>**<font style="color:rgba(0, 0, 0, 0.85) !important;">：通过工具（如 G1GCViewer、jstat）监控 GC 日志，及时调整参数。</font>
+###### 3. 退化后的惨案：灾难级的 STW
+
+无论是“并发模式失败”还是“碎片化晋升失败”，只要触发其中一个，CMS 就会当场宣布“并发模式彻底破产”，并执行极其恐怖的**退化机制**：
+
+1. **暂停一切**：瞬间触发 Stop-The-World（STW），把所有的用户业务线程全部强行物理冻结。
+    
+2. **召唤远古神兽**：JVM 临时抛弃 CMS，把 JDK 1.2 时代的远古单线程收集器 **`Serial Old`** 给请出来。
+    
+3. **单线程苦力**：`Serial Old` 使用“标记-整理（Mark-Compact）”算法，依靠**单条线程**，极其缓慢地把老年代的几百万个对象一个一个移动、推平、压缩，来消除内存碎片。
+    
+4. **灾难后果**：原本 CMS 承诺的几十毫秒停顿，会瞬间飙升到 **几秒、十几秒甚至几分钟**。在这期间，你的系统接口全部超时，甚至导致微服务注册中心将该节点判定为宕机下线。这就是著名的“CMS 死亡卡顿”。
+
+###### 4. 终极救赎：如何通过参数防止退化？
+
+既然退化这么可怕，我们在企业级调优中必须通过修改 JVM 参数来“防患于未然”：
+
+- **对策一：别等塞满了才扫（预防 Concurrent Mode Failure）**
+    
+    - 参数：`-XX:CMSInitiatingOccupancyFraction=70`
+        
+    - 作用：设置 CMS 触发的物理水位线。默认情况下，CMS 会等到老年代使用了 92% 才开始并发清理，这极容易导致清理期间内存被瞬间击穿。通过将其调低（如 70% 或 80%），给并发清理留出充足的物理缓冲空间。
+    
+- **对策二：定期做一次碎片整理（预防 Promotion Failure）**
+    
+    - 参数：`-XX:+UseCMSCompactAtFullCollection` （默认开启）和 `-XX:CMSFullGCsBeforeCompaction=0`
+        
+    - 作用：强制 CMS 在每次经历完 Full GC 后，顺手带一次内存碎片整理（压缩）过程。虽然这会稍微增加一点点 STW 时间，但彻底杜绝了碎片化导致的彻底退化卡死。
 
 #### 4，<font style="color:rgb(79, 79, 79);">G1 收集器</font>
-**<font style="color:rgb(77, 77, 77);">定义：</font>**<font style="color:rgb(77, 77, 77);"> Garbage First</font>
 
-<font style="color:rgba(0, 0, 0, 0.85);">G1 将堆内存划分为多个大小相等的独立</font>**<font style="color:rgb(0, 0, 0) !important;">Region</font>**<font style="color:rgba(0, 0, 0, 0.85);">（默认 1MB~32MB），每个 Region 可动态标记为</font>**<font style="color:rgb(0, 0, 0) !important;">Eden 区（E）、Survivor 区（S）或老年代（O）</font>**<font style="color:rgba(0, 0, 0, 0.85);">。</font>
+在 JVM 的发展史上，**G1（Garbage-First）收集器** 是一个划时代的物理架构转折点。从 JDK 9 开始，它正式取代了 Parallel 组合和 CMS，成为了 Java 的默认垃圾收集器。
 
-**<font style="color:rgb(77, 77, 77);">适用场景：</font>**
+如果说以前的垃圾回收是“大扫除”（要么扫整个新生代，要么扫整个老年代），那么 **G1 就是“网格化精准打击”**。为了让你彻底看透 G1，我们必须先理解它在物理内存布局上的“碎尸万段”式革命，然后再拆解它的 4 个核心回收阶段。
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">同时注重吞吐量和低延迟（响应时间）</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">超大堆内存（内存大的），会将堆内存划分为多个大小相等的区域</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">整体上是标记-整理算法，两个区域之间是复制算法</font>
+###### 1. 物理革命：化整为零的 Region 架构
 
-**<font style="color:rgb(77, 77, 77);">相关参数：</font>**  
-<font style="color:rgb(77, 77, 77);">JDK8 并不是默认开启的，所需要参数开启</font>
+在 G1 之前，堆内存的物理划分是“连续的一大块新生代”和“连续的一大块老年代”。 而在 G1 中，**物理上的新生代和老年代彻底消失了**。
 
-```plain
--XX:+UseG1GC
--XX:G1HeapRegionSize=size
--XX:MaxGCPauseMillis=time
-```
+G1 把整个 Java 堆内存，像切豆腐一样，切成了 2048 个大小完全相同的**物理独立小方块，称为 Region（区域）**（每个大小通常在 1MB~32MB 之间）。 虽然物理上被打碎了，但 G1 在**逻辑上**依然保留了分代的概念，给每个方块贴上了不同的角色标签：
 
-##### <font style="color:rgb(79, 79, 79);">G1 垃圾回收阶段</font>
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752481229021-7c01b6e5-a293-43ce-9cc1-458860ce349b.png)
+- **E (Eden 区)**：存放新生对象。
+    
+- **S (Survivor 区)**：存放存活过一次的对象。
+    
+- **O (Old 区)**：存放老年代对象。
+    
+- **H (Humongous 区)**：这是 G1 独创的。如果一个超大对象（比如巨型数组）大小超过了半个 Region，G1 会寻找几个连续的 H 区来存放它，避免大对象在老年代里来回拷贝。
 
-**Young Collection**：对新生代垃圾收集
+###### 2. 核心灵魂：为什么叫 Garbage-First（垃圾优先）？
 
-**Young Collection + Concurrent Mark**：如果老年代内存到达一定的阈值了，新生代垃圾收集同时会执行一些并发的标记。
+G1 彻底解决了 CMS 最头疼的“停顿时间不可控”问题。你可以给 G1 下达硬性死命令：`-XX:MaxGCPauseMillis=200`（要求每次卡顿绝对不能超过 200 毫秒）。
 
-**Mixed Collection**：会对新生代 + 老年代 + 幸存区等进行混合收集，然后收集结束，会重新进入新生代收集。
+**G1 是怎么做到的？** 因为 G1 在后台维护了一个**价值排行榜（优先列表）**。它会精准计算每个 Region 里有多少垃圾、回收这个 Region 需要耗费多少毫秒。 当触发 GC 时，G1 会根据你设定的 200ms 时间上限，从排行榜里**只挑选出“垃圾最多、回收收益最大”的那几个 Region 进行回收**。绝不多贪！这就是“垃圾优先（Garbage-First）”名字的由来。
 
-##### <font style="color:rgb(79, 79, 79);">Young Collection</font>
-**<font style="color:rgb(77, 77, 77);">新生代存在 STW：</font>**  
-<font style="color:rgb(77, 77, 77);">分代是按对象的生命周期划分，分区则是将堆空间划分连续几个不同小区间，每一个小区间独立回收，可以控制一次回收多少个小区间，方便控制 GC 产生的停顿时间！</font>  
-<font style="color:rgb(77, 77, 77);">E：eden，S：幸存区，O：老年代</font>  
-<font style="color:rgb(77, 77, 77);">新生代收集会产生 STW ！</font>
+###### 3. 深度拆解：G1 混合回收（Mixed GC）的四个核心阶段
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/gif/58546395/1752481317146-24ee4d10-c174-4a44-b8bd-582eeeb73a88.gif)
+当老年代的内存占比达到阈值（默认 45%）时，G1 会触发其最核心的 **Mixed GC（混合回收：同时回收整个新生代 + 部分高收益的老年代）**。它的运作过程与 CMS 非常相似，但也解决了 CMS 的致命缺陷，具体分为以下 4 步：
 
-##### <font style="color:rgb(79, 79, 79);">Young Collection + CM</font>
-<font style="color:rgb(77, 77, 77);">在 Young GC 时会进行 GC Root 的初始化标记。</font><font style="color:rgb(77, 77, 77);">老年代占用堆空间比例达到阈值时，进行并发标记（不会STW），由下面的 JVM 参数决定 -</font>`<font style="color:rgb(77, 77, 77);">XX:InitiatingHeapOccupancyPercent=percent （默认45%）</font>`
+ ① 初始标记（Initial Mark）—— 【STW，极短】
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752481426024-87a3f3a9-b6a9-4984-b4d8-e1c841b57f17.png)
+- **物理动作**：仅仅只是把与 GC Roots 直接相连的对象标记下来。
+    
+- **巧妙借力**：这个阶段是强制 Stop-The-World 的。但是，G1 极其聪明地把这个动作**搭了 Minor GC（新生代回收）的顺风车**。反正 Minor GC 也要暂停，就顺手把初始标记给做了，所以**在这个阶段，G1 几乎没有额外的性能开销**。
+    
 
-##### <font style="color:rgb(79, 79, 79);">Mixed Collection</font>
-会对 E S O 进行全面的回收
+ ② 并发标记（Concurrent Mark）—— 【无 STW，与用户并发】
 
-+ 最终标记会 STW
-+ 拷贝存活会 STW
+- **物理动作**：GC 线程从初始标记的根节点出发，使用“三色标记法”在整个堆中顺藤摸瓜，扫描整个对象引用图。此时用户业务线程照常飞速运行。
+    
+- **时间**：耗时最长，但因为是并发的，用户感觉不到卡顿。
+    
 
--`XX:MaxGCPauseMills=xxms `用于指定最长的停顿时间！
+ ③ 最终标记（Final Mark）—— 【STW，较短】
 
-问：为什么有的老年代被拷贝了，有的没拷贝？
+- **物理动作**：我们在讲三色标记时提过，并发阶段用户线程会捣乱导致“漏标”。CMS 使用的是增量更新（事后重新扫一遍黑对象）。而 **G1 使用的是更先进的原始快照（SATB，Snapshot-At-The-Beginning）**。
+    
+- **SATB 绝杀**：在并发阶段，用户线程只要尝试断开任何引用，G1 就会立刻把这个被断开的对象物理截获并扔到一个 SATB 队列里。在最终标记阶段（STW），G1 只需要飞速处理这个队列里的对象，将它们默认当做存活对象处理。**这比 CMS 重新扫图的速度快得多！**
 
-因为指定了最大停顿时间，如果对所有老年代都进行回收，耗时可能过高。为了保证时间不超过设定的停顿时间，会回收最有价值的老年代（回收后，能够得到更多内存）。
+ ④ 筛选回收（Evacuation / Cleanup）—— 【STW，时间完全可控】
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752481485704-9bb03d06-cfd0-4d7e-8726-c30901634565.png)
+- _（注：这是 G1 与 CMS 物理上分道扬镳的决定性阶段！）_
+    
+- **物理动作**：G1 会暂停所有用户线程。根据之前算好的价值排行榜，选出收益最高的几个 Old Region。然后，G1 采用**标记-复制算法**，把这几个 Region 里的存活对象，**物理转移（搬家）到一个全新的空白 Region 中**，最后把原来那几个 Region 彻底清空！
+    
+- **两大绝杀优势**：
+    
+    1. **绝对没有内存碎片**：因为是把存活对象整齐地复制到新方块里，所以 G1 彻底根除了 CMS 的碎片化退化问题。
+        
+    2. **绝对按时下班**：因为转移对象极其耗时，G1 会根据你的 `MaxGCPauseMillis` 指标，算准时间，时间一到立刻收手，保证绝对不超时！
 
-##### Full GC
-+ <font style="color:rgb(0, 0, 0) !important;">老年代空间不足</font><font style="color:rgba(0, 0, 0, 0.85) !important;">：当对象晋升到老年代时，老年代没有足够空间容纳。</font>
-+ 如果垃圾产生速度慢于垃圾回收速度，不会触发 Full GC，还是并发地进行清理
-+ 如果垃圾产生速度快于垃圾回收速度，便会触发 Full GC，然后退化成 serial Old 收集器串行的收集，就会导致停顿的时候长。
+###### 💡 总结对比：G1 凭什么淘汰了老前辈？
 
-##### <font style="color:rgb(79, 79, 79);">Young Collection 跨代引用</font>
-**<font style="color:rgb(15, 17, 21);">Young Collection 跨代引用</font>**<font style="color:rgb(15, 17, 21);"> 指的是在 </font>**<font style="color:rgb(15, 17, 21);">年轻代</font>**<font style="color:rgb(15, 17, 21);"> 中的对象，被 </font>**<font style="color:rgb(15, 17, 21);">老年代</font>**<font style="color:rgb(15, 17, 21);"> 中的对象所引用。这种引用关系是年轻代垃圾回收（Minor GC）时的一个“麻烦”，因为它会让被引用的年轻代对象不能被回收。</font>
+- **对比 Parallel（吞吐量狂魔）**：G1 虽然吞吐量略逊一筹，但停顿时间更平滑，不会出现一次 Full GC 卡死好几秒的情况。
+    
+- **对比 CMS（低延迟绅士）**：CMS 是基于“标记-清除”的，随时可能因为内存碎片当场崩溃退化为单线程卡死。而 G1 依靠“Region 架构 + 复制算法”，在保证低延迟的同时，物理层面上彻底杜绝了内存碎片的产生。
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752483691441-fe08675c-2259-4c0e-9b60-f0bd441993b7.png)
+#### 5、垃圾回收调优
 
-**<font style="color:rgb(15, 17, 21);">卡表（Card Table）和记忆集（Remembered Set）</font>**
+JVM 垃圾回收调优（GC Tuning）是高级 Java 工程师的必修课，也是面试中最能体现底层功底的试金石。
 
-+ **<font style="color:rgb(15, 17, 21);">记忆集</font>**<font style="color:rgb(15, 17, 21);"> </font><font style="color:rgb(15, 17, 21);">=</font><font style="color:rgb(15, 17, 21);"> </font>**<font style="color:rgb(15, 17, 21);">“需求”</font>**<font style="color:rgb(15, 17, 21);"> </font><font style="color:rgb(15, 17, 21);">（我需要知道谁引用了我的对象）</font>
-+ **<font style="color:rgb(15, 17, 21);">卡表</font>**<font style="color:rgb(15, 17, 21);"> = </font>**<font style="color:rgb(15, 17, 21);">“解决方案之一”</font>**<font style="color:rgb(15, 17, 21);"> （我用一个字节数组按块来记录）</font>
-+ **<font style="color:rgb(15, 17, 21);">记忆集（Remembered Set）</font>**存在于E中，用于保存新生代对象对应的脏卡。
-+ **脏卡**：O 被划分为多个区域（一个区域512K），如果该区域引用了新生代对象，则该区域被称为脏卡。
-+ 在引用变更时通过 post-write barried + dirty card queue。
-+ concurrent refinement threads 更新 Remembered Set。
+很多人认为调优就是“背一堆 `-XX` 参数然后到处试”，这其实是极其危险的做法。真正的 GC 调优是一个“监控 ➡️ 定位 ➡️ 权衡 ➡️ 验证”的闭环过程。
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752483748670-965a7987-06a1-46e3-ba1a-ef40951256d8.png)
+为了让你拥有架构师级别的调优思维，我们抛开枯燥的参数大全，从**终极目标、调优心法、以及微服务实战场景**三个维度进行彻底拆解：
 
-##### <font style="color:rgb(79, 79, 79);">Remark（</font><font style="color:rgb(77, 77, 77);">重新标记</font><font style="color:rgb(79, 79, 79);">）</font><font style="color:rgb(77, 77, 77);"></font>
-<font style="color:rgb(77, 77, 77);">在垃圾回收时，收集器处理对象的过程中</font>
+##### 1. 调优的终极本质：打破“不可能三角”
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">黑色：已被处理，需要保留的</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">灰色：正在处理中的</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">白色：还未处理的</font>
+在进行任何参数调整前，你必须向业务方搞清楚一件事：**我们到底在追求什么？** JVM 调优永远在围绕以下三个核心指标进行残酷的“零和博弈”（不可能同时满足三个）：
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752483764687-1e5dea6f-1d8f-43fa-9973-4663a44b0021.png)
+1. **吞吐量（Throughput）**：CPU 有多少时间在真正跑业务代码？（越高越好，通常要求 95% 以上）
+    
+2. **延迟/停顿时间（Latency/STW）**：每次垃圾回收把系统卡死了多少毫秒？（越低越好，通常 Web 接口要求单次不超过 50ms~200ms）
+    
+3. **内存占用（Footprint）**：JVM 占了服务器多少物理内存？（越少越好，尤其是在云原生时代）
 
-但是在并发标记过程中，有可能 A 被处理了以后未引用 C ，但该处理过程还未结束，在处理过程结束之前 A 引用了 C ，这时就会用到 remark 。
 
-过程如下：
+**核心定律：**
 
-之前 C 未被引用，这时 A 引用了 C ，就会给 C 加一个写屏障，写屏障的指令会被执行，将 C 放入一个队列当中，并将 C 变为 处理中状态
+- 想降低卡顿时间（低延迟） ➡️ 每次就只能少扫一点垃圾 ➡️ 导致 GC 频繁触发 ➡️ 拖慢了整体吞吐量。
+    
+- 想提高吞吐量 ➡️ 必须把垃圾攒得足够多再一次性清掉 ➡️ 导致单次清理耗时极长 ➡️ 停顿时间（卡顿）严重超标。
 
-在并发标记阶段结束以后，重新标记阶段会 STW ，然后将放在该队列中的对象重新处理，发现有强引用引用它，就会处理它，由灰色变成黑色。
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752483799231-5f6359db-7b16-4423-804d-2216ad209fc4.png)
+##### 2. 调优心法：四大标准步骤
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752483818868-a2996ed0-4b87-4050-a77f-e8586bf4c3ff.png)
+千万不要上来就改参数。真正的调优步骤如下：
 
-##### JDK 8u20 字符串去重
-**过程：**
+###### 第一步：建立基线（开眼看世界）
 
-1. 将所有新分配的字符串（底层是 char[] ）放入一个队列。
-2. 当新生代回收时，G1 并发检查是否有重复的字符串。
-3. 如果字符串的值一样，就让他们引用同一个字符串对象。
+没有日志的调优就是蒙眼狂奔。在生产环境中，必须开启 GC 日志：
 
-注意：
+- JDK 8: `-XX:+PrintGCDetails -XX:+PrintGCDateStamps -Xloggc:gc.log`
+    
+- JDK 9+: `-Xlog:gc*=info:file=gc.log:time:filecount=10,filesize=50M`
 
-+ 其与 String.intern() 的区别
-+ String.intern() 关注的是字符串对象
-+ 字符串去重关注的是 char[]
-+ 在 JVM 内部，使用了不同的字符串标
+###### 第二步：识别病灶（算账）
 
-**优点与缺点**
+借助工具（如 GCEasy 在线分析、Arthas、jstat 等）分析日志，看这几个致命指标：
 
-优点：节省了大量内存
+- **GC 频率太高？**（比如每秒 1 次 Minor GC）。
+    
+- **单次 STW 太长？**（比如一次 Full GC 卡死 3 秒）。
+    
+- **老年代在不断膨胀？**（每次 Full GC 完，老年代的存活对象都在变多，这是极其危险的内存泄漏前兆）。
 
-缺点：新生代回收时间略微增加，导致略微多占用 CPU
+###### 第三步：对症下药（选对收集器比调参更重要）
 
-##### <font style="color:rgb(79, 79, 79);">JDK 8u40 并发标记类卸载</font>
-<font style="color:rgb(77, 77, 77);">在并发标记阶段结束以后，就能知道哪些类不再被使用。如果一个类加载器的所有类都不在使用，则卸载它所加载的所有类。</font>
+- 追求极致吞吐量（报表、后台批处理）：选 **Parallel Scavenge + Parallel Old**。
+    
+- 追求平滑的低延迟响应（Web 接口、微服务）：JDK 8 选 **G1**，JDK 11/17 选 **ZGC**（几乎能做到 1ms 以内的 STW，是终极杀器）。
 
-##### <font style="color:rgb(79, 79, 79);">JDK 8u60 回收巨型对象</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">一个对象大于region的一半时，就称为巨型对象</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">G1不会对巨型对象进行拷贝</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">回收时被优先考虑</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">G1会跟踪老年代所有incoming引用，如果老年代incoming引用为0的巨型对象就可以在新生代垃圾回收时处理掉</font>
+###### 第四步：微调参数并压测验证。
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752483983490-65741e9b-45e1-4022-a8ad-17401bb201e2.png)
 
-#### <font style="color:rgb(79, 79, 79);">5、垃圾回收调优</font>
-<font style="color:rgb(77, 77, 77);">查看虚拟机参数命令</font>
 
-```powershell
-D:\JavaJDK1.8\bin\java  -XX:+PrintFlagsFinal -version | findstr "GC"
-```
+##### 3. 企业级实战：常见场景与调优套路
 
-可以根据参数去查询具体的信息
+在实际部署 Spring Boot 这样的微服务应用（特别是运行在容器化环境中）时，我们经常会遇到以下两种典型的调优场景：
 
-**1，调优领域**
+###### 场景一：Spring Boot 高并发 REST API（G1 调优套路）
 
-+ 内存
-+ 锁竞争
-+ cpu 占用
-+ io
-+ gc
+Web 微服务的特点是：请求量大，瞬间会产生海量的短生命周期对象（DTO、VO），但很快就会消亡。我们最怕的就是接口因为 GC 卡顿导致超时熔断。
 
-**2，确定目标**
+- **动作 1：替换收集器** 如果你还在用 JDK 8 默认的 Parallel，坚决把它换成 G1：`-XX:+UseG1GC`
+    
+- **动作 2：下达软性 KPI** 不要去手动指定新生代大小，直接给 G1 下达延迟目标：`-XX:MaxGCPauseMillis=100`（告诉 G1，每次卡顿尽量控制在 100 毫秒以内）。
+    
+- **动作 3：防止老年代过早介入** `-XX:InitiatingHeapOccupancyPercent=45`（默认值）。如果发现 Mixed GC 极其频繁，说明对象晋升太快，可以适当把整个堆内存调大，或者微调这个触发水位线。
 
-低延迟/高吞吐量？ 选择合适的GC
+###### 场景二：Docker/K8s 容器化部署（极其容易踩坑的 OOM）
 
-+ CMS(<font style="color:rgb(15, 17, 21);">并发标记清除收集器</font>), G1(<font style="color:rgb(15, 17, 21);">G1垃圾回收器</font>), ZGC(<font style="color:rgb(15, 17, 21);">Z垃圾回收器</font>)
-+ ParallelGC(<font style="color:rgb(15, 17, 21);">并行垃圾回收器</font>)
-+ Zing(<font style="color:rgb(15, 17, 21);">商业JVM平台</font>)
+在容器化部署 Spring Boot 时，最惨痛的教训就是：**应用莫名其妙被 Docker 容器强杀（OOMKilled），但 JVM 的堆内存明明还没满！**
 
-**3，最快的 GC就是不GC**
+- **病因分析**：早期的 JVM 不认识 Docker 的隔离机制。你给容器限制了 2GB 内存，但 JVM 以为自己跑在一台 16GB 的物理机上，于是疯狂申请内存，超过 2GB 后直接被操作系统的 Cgroup 无情击杀。
+    
+- **终极调优对策（弃用 `-Xmx`）**： 在容器环境中，强烈建议**不要**写死 `-Xmx512m` 这种绝对值参数。改用现代化比例参数：
 
-首先排除减少因为自身编写的代码而引发的内存问题
+    ``` bash
+    java -XX:InitialRAMPercentage=70.0 -XX:MaxRAMPercentage=70.0 -jar app.jar
+    ```
 
-查看 Full GC 前后的内存占用，考虑以下几个问题
-
-+ 数据是不是太多？
-+ 数据表示是否太臃肿
-+ 对象大小 16 Integer 24 int 4
-+ 是否存在内存泄漏
-+ 第三方缓存实现
-
-**4，新生代调优**
-
-新生代的特点：
-
-+ 所有的 new 操作分配内存都是非常廉价的
-+ TLAB thread-lcoal allocation buffer(**<font style="color:rgb(15, 17, 21);">线程本地分配缓冲区</font>**)
-+ 死亡对象回收零代价
-+ 大部分对象用过即死（朝生夕死）
-+ Minor GC 所用时间远小于 Full GC
-
-**5，新生代内存越大越好么？**
-
-不是
-
-新生代内存太小：频繁触发 Minor GC ，会 STW ，会使得吞吐量下降
-
-新生代内存太大：老年代内存占比有所降低，会更频繁地触发 Full GC。而且触发 Minor GC 时，清理新生代所花费的时间会更长
-
-**新生代内存设置为内容纳[并发量*(请求-响应)]的数据为宜**
-
-**幸存区需要能够保存 当前活跃对象+需要晋升的对象**
-
-晋升阈值配置得当，让长时间存活的对象尽快晋升
-
-```java
--XX:MaxTenuringThreshold=threshold
--XX:+PrintTenuringDistrubution
-```
-
-**<font style="color:rgb(79, 79, 79);">5，老年代调优</font>**
-
-<font style="color:rgb(77, 77, 77);">以 CMS 为例：</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">CMS 的老年代内存越大越好</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">先尝试不做调优，如果没有 Full GC 那么已经，否者先尝试调优新生代。</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">观察发现 Full GC 时老年代内存占用，将老年代内存预设调大 1/4 ~ 1/3</font>
-
-```java
--XX:CMSInitiatingOccupancyFraction=percent
-```
-
-**<font style="color:rgb(79, 79, 79);">6，案例</font>**
-
-<font style="color:rgb(77, 77, 77);">案例1：Full GC 和 Minor GC 频繁</font>
-
-<font style="color:rgb(77, 77, 77);">新生代空间小，让一些没有到达晋升标准的对象到达老年代使其老年代空间紧张，频繁发生垃圾回收。  
-</font><font style="color:rgb(77, 77, 77);">案例2：请求高峰期发生 Full GC，单次暂停时间特别长（CMS）</font>
-
-<font style="color:rgb(77, 77, 77);">在并发表标记前对新生代进行垃圾回收。  
-</font><font style="color:rgb(77, 77, 77);">案例3：老年代充裕情况下，发生 Full GC（jdk1.7）</font>
-
-<font style="color:rgb(77, 77, 77);">永久代空间不够。</font>
+    **物理逻辑**：这会让 JVM 乖乖去读取 Docker 容器分配的实际内存（比如 2GB），然后把它的 70%（1.4GB）作为自己的最大堆内存。剩下的 30% 留给 JVM 底层的元空间、直接内存（如 Netty 通信）以及操作系统，彻底根治容器被强杀的惨剧。
 
 # <font style="color:rgb(77, 77, 77);">三</font><font style="color:rgb(79, 79, 79);">、</font><font style="color:rgb(77, 77, 77);">类加载和字节码技术</font>
 <!-- 这是一张图片，ocr 内容为： -->
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752571631433-e48016f7-7bbc-4fe1-88a6-f733eb6c12e5.png)
 
-### <font style="color:rgb(79, 79, 79);">1、类文件结构</font>
+### 1、类文件结构
 <font style="color:rgb(77, 77, 77);">通过 javac 类名.java 编译 java 文件后，会生成一个 .class 的文件！  
 </font><font style="color:rgb(77, 77, 77);">以下是字节码文件：</font>
 
-```plain
+``` class
 0000000 ca fe ba be 00 00 00 34 00 23 0a 00 06 00 15 09 
 0000020 00 16 00 17 08 00 18 0a 00 19 00 1a 07 00 1b 07 
 0000040 00 1c 01 00 06 3c 69 6e 69 74 3e 01 00 03 28 29 
@@ -1304,9 +1343,9 @@ D:\JavaJDK1.8\bin\java  -XX:+PrintFlagsFinal -version | findstr "GC"
 0001120 00 00 02 00 14
 ```
 
-<font style="color:rgb(77, 77, 77);">根据 JVM 规范，类文件结构如下：</font>
+根据 JVM 规范，类文件结构如下：
 
-```java
+``` plain
 u4 			   magic
 u2             minor_version;    
 u2             major_version;    
@@ -1331,7 +1370,7 @@ u4 magic
 
 对应字节码文件的 0~3 个字节
 
-0000000 ca fe ba be 00 00 00 34 00 23 0a 00 06 00 15 09
+`0000000 ca fe ba be 00 00 00 34 00 23 0a 00 06 00 15 09`
 
 ca fe ba be ：意思是 .class 文件，不同的东西有不同的魔数，比如 jpg、png 图片等！
 
@@ -1345,7 +1384,7 @@ ca fe ba be ：意思是 .class 文件，不同的东西有不同的魔数，比
 #### <font style="color:rgb(79, 79, 79);">1）javap 工具</font>
 <font style="color:rgb(77, 77, 77);">Java 中提供了 javap 工具来反编译 class 文件</font>
 
-```java
+``` bash
 javap -v D:Demo.class
 ```
 
@@ -1364,7 +1403,6 @@ public class Demo3_1 {
 **<font style="color:rgb(77, 77, 77);">常量池载入运行时常量池</font>**  
 <font style="color:rgb(77, 77, 77);">常量池也属于方法区，只不过这里单独提出来了</font>
 
-<!-- 这是一张图片，ocr 内容为： -->
 ![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752573189113-0ca4dfdd-aa0f-42b7-887f-9670d3293898.png)
 
 **<font style="color:rgb(77, 77, 77);">方法字节码载入方法区</font>****  
@@ -2588,381 +2626,84 @@ public class Candy11 {
 <font style="color:rgb(77, 77, 77);">注意：这同时解释了为什么匿名内部类引用局部变量时，局部变量必须是 final 的：因为在创建 Candy11$1 对象时，将 x 的值赋值给了 Candy11$1 对象的 值后，如果不是 final 声明的 x 值发生了改变，匿名内部类则值不一致。</font>
 
 ### <font style="color:rgb(79, 79, 79);">4、类加载阶段</font>
-#### <font style="color:rgb(79, 79, 79);">1）加载</font>
-+ 将类的字节码载入方法区（1.8后为元空间，在本地内存中）中，内部采用 C++ 的 instanceKlass 描述 java 类，它的重要 ﬁeld 有：
-+ _java_mirror 即 java 的类镜像，例如对 String 来说，它的镜像类就是 String.class，作用是把 klass 暴露给 java 使用
-    - _super 即父类
-    - _ﬁelds 即成员变量
-    - _methods 即方法
-    - <font style="color:rgba(0, 0, 0, 0.75);">_constants 即常量池</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">_class_loader 即类加载器</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">_vtable 虚方法表</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">_itable 接口方法</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">如果这个类还有父类没有加载，先加载父类</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">加载和链接可能是交替运行的</font>
 
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752691531100-7b02b045-c2e3-4931-9794-be0663185b67.png)
-
-+ instanceKlass保存在方法区。JDK 8以后，方法区位于元空间中，而元空间又位于本地内存中
-+ _java_mirror则是保存在堆内存中
-+ InstanceKlass和*.class(JAVA镜像类)互相保存了对方的地址
-+ 类的对象在对象头中保存了*.class的地址。让对象可以通过其找到方法区中的instanceKlass，从而获取类的各种信息
-
-**<font style="color:rgb(77, 77, 77);">注意</font>**
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">instanceKlass 这样的【元数据】是存储在方法区（1.8 后的元空间内），但 _java_mirror 是存储在堆中</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">可以通过前面介绍的 HSDB 工具查看</font>
-
-#### <font style="color:rgb(79, 79, 79);">2）连接</font>
-**<font style="color:rgb(77, 77, 77);">验证</font>**<font style="color:rgb(77, 77, 77);">  
-</font><font style="color:rgb(77, 77, 77);">验证类是否符合 JVM规范，安全性检查  
-</font><font style="color:rgb(77, 77, 77);">用 UE 等支持二进制的编辑器修改 HelloWorld.class 的魔数，在控制台运行  
-</font>**<font style="color:rgb(77, 77, 77);">准备</font>**<font style="color:rgb(77, 77, 77);">  
-</font><font style="color:rgb(77, 77, 77);">为 static 变量分配空间，设置默认值</font>
-
-+ <font style="color:rgb(77, 77, 77);">static 变量在 JDK 7 之前存储于 instanceKlass 末尾，从 JDK 7 开始，存储于 _java_mirror 末尾</font>
-+ <font style="color:rgb(77, 77, 77);">static 变量分配空间和赋值是两个步骤，分配空间在准备阶段完成，赋值在初始化阶段完成</font>
-+ <font style="color:rgb(77, 77, 77);">如果 static 变量是 final 的基本类型，以及字符串常量，那么编译阶段值就确定了，赋值在准备阶段完成</font>
-+ <font style="color:rgb(77, 77, 77);">如果 static 变量是 final 的，但属于引用类型，那么赋值也会在初始化阶段完成将常量池中的符号引用解析为直接引用</font>
-
-**解析**
-
-+ 将常量池中的符号引用（Symbolic Reference）替换为直接引用（Direct Reference）的过程。该阶段会把一些静态方法（符号引用 如main()方法）替换为执行数据所存内存的指针或句柄（直接引用），这就是所谓的 静态链接 过程（类加载期间完成）。动态链接实在程序运行期间完成的将符号引用替换为直接引用（如 实际使用的方法math.compute()）。
-+ 符号引用：符号引用以一组符号来描述所引用的目标，符号可以是任何形式的字面量，只要可以唯一定位到目标即可。符号引用于内存布局无关，所以所引用的对象不一定需要已经加载到内存中。各种虚拟机实现的内存布局可以不同，但是接受的符号引用必须是一致的，因为符号引用的字面量形式已经明确定义在Class文件格式中。
-+ 直接引用：直接引用时直接指向目标的指针、相对偏移量或是一个能间接定位到目标的句柄。直接引用和虚拟机实现的内存布局相关，同一个符号引用在不同虚拟机上翻译出来的直接引用一般不会相同。如果有了直接引用，那么它一定已经存在于内存中了。
-
-#### <font style="color:rgb(79, 79, 79);">3）初始化</font>
-##### <font style="color:rgb(79, 79, 79);"><cinit>()v 方法</font>
-<font style="color:rgb(77, 77, 77);">初始化即调用 <cinit>()V ，虚拟机会保证这个类的『构造方法』的线程安全</font>
-
-##### <font style="color:rgb(79, 79, 79);">发生的时机</font>
-<font style="color:rgb(77, 77, 77);">概括得说，类初始化是【懒惰的】</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">main 方法所在的类，总会被首先初始化</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">首次访问这个类的静态变量或静态方法时</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">子类初始化，如果父类还没初始化，会引发</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">子类访问父类的静态变量，只会触发父类的初始化</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">Class.forName</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">new 会导致初始化</font>
-
-<font style="color:rgb(77, 77, 77);">不会导致类初始化的情况</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">访问类的 static final 静态常量（基本类型和字符串）不会触发初始化</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">类对象.class 不会触发初始化</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">创建该类的数组不会触发初始化</font>
-
-```java
-public class Load1 {
-    static {
-        System.out.println("main init");
-    }
-    public static void main(String[] args) throws ClassNotFoundException {
-        // 1. 静态常量（基本类型和字符串）不会触发初始化
-        //         System.out.println(B.b);
-        // 2. 类对象.class 不会触发初始化
-        //         System.out.println(B.class);
-        // 3. 创建该类的数组不会触发初始化
-        //         System.out.println(new B[0]);
-        // 4. 不会初始化类 B，但会加载 B、A
-        //         ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        //         cl.loadClass("cn.ali.jvm.test.classload.B");
-        // 5. 不会初始化类 B，但会加载 B、A
-        //         ClassLoader c2 = Thread.currentThread().getContextClassLoader();
-        //         Class.forName("cn.ali.jvm.test.classload.B", false, c2);
-
-
-        // 1. 首次访问这个类的静态变量或静态方法时
-        //         System.out.println(A.a);
-        // 2. 子类初始化，如果父类还没初始化，会引发
-        //         System.out.println(B.c);
-        // 3. 子类访问父类静态变量，只触发父类初始化
-        //         System.out.println(B.a);
-        // 4. 会初始化类 B，并先初始化类 A
-        //         Class.forName("cn.ali.jvm.test.classload.B");
-    }
-
-}
-
-
-class A {
-    static int a = 0;
-    static {
-        System.out.println("a init");
-    }
-}
-class B extends A {
-    final static double b = 5.0;
-    static boolean c = false;
-    static {
-        System.out.println("b init");
-    }
-}
-```
 
 ### 5、类加载器
-类加载器虽然只用于实现类的加载动作，但它在Java程序中起到的作用却远超类加载阶段
 
-对于任意一个类，都必须由加载它的类加载器和这个类本身一起共同确立其在 Java 虚拟机中的唯一性，每一个类加载器，都拥有一个独立的类名称空间。这句话可以表达得更通俗一些：比较两个类是否“相等”，只有在这两个类是由同一个类加载器加载的前提下才有意义，否则，即使这两个类来源于同一个 Class 文件，被同一个 Java 虚拟机加载，只要加载它们的类加载器不同，那这两个类就必定不相等！
+在前面讲“类的生命周期”时，我们提到了第一步是**加载（Loading）**。如果说那只是讲了“要把人招进工厂”，那么现在我们要深入探讨的，是“到底是谁去招人？”**以及**“工厂的人事部是怎么层层审批的？”。
 
-以JDK 8为例
+在 JVM 面试和底层架构中，关于类加载阶段，绝对的核心考察点只有一个：**双亲委派模型（Parents Delegation Model）与类加载器（ClassLoader）**。
 
-| **<font style="color:rgb(79, 79, 79);">名称</font>** | **<font style="color:rgb(79, 79, 79);">加载的类</font>** | **<font style="color:rgb(79, 79, 79);">说明</font>** |
-| --- | --- | --- |
-| <font style="color:rgb(79, 79, 79);">Bootstrap ClassLoader（启动类加载器）</font> | <font style="color:rgb(79, 79, 79);">JAVA_HOME/jre/lib</font> | <font style="color:rgb(79, 79, 79);">无法直接访问</font> |
-| <font style="color:rgb(79, 79, 79);">Extension ClassLoader(拓展类加载器)</font> | <font style="color:rgb(79, 79, 79);">JAVA_HOME/jre/lib/ext</font> | <font style="color:rgb(79, 79, 79);">上级为Bootstrap，显示为null</font> |
-| <font style="color:rgb(79, 79, 79);">Application ClassLoader(应用程序类加载器)</font> | <font style="color:rgb(79, 79, 79);">classpath</font> | <font style="color:rgb(79, 79, 79);">上级为Extension</font> |
-| <font style="color:rgb(79, 79, 79);">自定义类加载器</font> | <font style="color:rgb(79, 79, 79);">自定义</font> | <font style="color:rgb(79, 79, 79);">上级为Application</font> |
+为了让你在底层逻辑上彻底通透，我们抛开枯燥的源码，把 JVM 的类加载系统看作是一个“等级森严的官僚体系”，来进行深度降维拆解：
 
+#### 1. 物理架构：类加载器的“三座大山”
 
-#### 1）启动类的加载器
-可通过在控制台输入指令，使得类被启动类加器加载
+JVM 在启动时，并不是只用一个工具去加载所有的类，而是物理划分了**三个等级完全不同的类加载器**。它们各自都有极其严格的“管辖地盘”：
 
-#### 2）扩展类的加载器
-如果 classpath 和 JAVA_HOME/jre/lib/ext 下有同名类，加载时会使用拓展类加载器加载。当应用程序类加载器发现拓展类加载器已将该同名类加载过了，则不会再次加载。
+- 🔴 **启动类加载器（Bootstrap ClassLoader）—— “最高统帅”**
+    
+    - **物理本质**：它是用 C++ 语言写的，直接嵌在 JVM 内核里，是虚拟机的一部分。
+        
+    - **管辖地盘**：只负责加载 Java 最核心、最机密的底层类库（即 `JAVA_HOME/jre/lib` 目录下的包，比如 `rt.jar` 里的 `java.lang.String`、`java.lang.Object`）。
+        
+- 🟡 **扩展类加载器（Extension ClassLoader）—— “大区经理”**
+    
+    - **物理本质**：由 Java 语言实现。
+        
+    - **管辖地盘**：负责加载 Java 的一些扩展特性类库（`JAVA_HOME/jre/lib/ext` 目录下的包）。
+        
+- 🔵 **应用程序类加载器（Application ClassLoader）—— “基层打工人”**
+    
+    - **物理本质**：由 Java 语言实现，也是程序中**默认的类加载器**。
+        
+    - **管辖地盘**：负责加载你项目里自己写的代码（`classpath` 路径下的类，比如 `com.你的名字.User`）以及 Maven 引入的各种第三方依赖。
 
-#### 3）双亲委派模式
-双亲委派模式，即调用类加载器ClassLoader 的 loadClass 方法时，查找类的规则。
+_(注：在这三个之上，你还可以写代码继承 `ClassLoader` 来实现**自定义类加载器**，这相当于你外包请来的“临时工”。)_
 
-#### <font style="color:rgb(79, 79, 79);">4）自定义类加载器</font>
-**<font style="color:rgb(77, 77, 77);">使用场景</font>**
+#### 2. 核心灵魂：双亲委派模型（绝对的“啃老/甩锅”机制）
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">想加载非 classpath 随意路径中的类文件</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">通过接口来使用实现，希望解耦时，常用在框架设计</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">这些类希望予以隔离，不同应用的同名类都可以加载，不冲突，常见于 tomcat 容器</font>
+当你写了一句 `new User()`，JVM 到底是用哪个加载器去加载这个类的？ 答案是：基层打工人（App ClassLoader）接到了任务，但他**绝对不会自己先干**。
 
-**<font style="color:rgb(77, 77, 77);">步骤</font>**
+所谓的“双亲委派机制”，底层物理运行逻辑就是“无脑向上一级甩锅，上面不干了，下面才敢干”。
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">继承 ClassLoader 父类</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">要遵从双亲委派机制，重写 ﬁndClass 方法。不是重写 loadClass 方法，否则不会走双亲委派机制。</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">读取类文件的字节码</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">调用父类的 deﬁneClass 方法来加载类</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">使用者调用该类加载器的 loadClass 方法</font>
+**🔥 完整推演流程（以加载你写的 `com.demo.User` 为例）：**
 
-**破坏双亲委派模式**
+1. **向上委派（甩锅）**：
+    
+    - **App 加载器**接到了加载 `User` 的请求，它看都不看，直接把请求上报给父级**Ext 加载器**。
+        
+    - **Ext 加载器**接到请求，也看都不看，继续上报给最顶层的**Bootstrap 加载器**。
+        
+2. **向下尝试（干活）**：
+    
+    - **Bootstrap 加载器**是最高统帅，没人可上报了，于是去自己的地盘（核心库）里找。发现 `com.demo.User` 根本不是核心类，找不着。于是把请求**打回给 Ext 加载器**。
+        
+    - **Ext 加载器**去自己的扩展库里找，也找不着，于是把请求**打回给 App 加载器**。
+        
+    - **App 加载器**去你的 `classpath` 下找，哎，找到了！于是**自己动手把这个类加载进内存**。
 
-+ 双亲委派模型的第一次“被破坏”其实发生在双亲委派模型出现之前——即JDK1.2面世以前的“远古”时代
-    - 建议用户重写findClass()方法，在类加载器中的loadClass()方法中也会调用该方法
-+ 双亲委派模型的第二次“被破坏”是由这个模型自身的缺陷导致的
-    - 如果有基础类型又要调用回用户的代码，此时也会破坏双亲委派模式
-+ 双亲委派模型的第三次“被破坏”是由于用户对程序动态性的追求而导致的
-    - 这里所说的“动态性”指的是一些非常“热”门的名词：代码热替换（Hot Swap）、模块热部署（Hot Deployment）等
+#### 3. 灵魂拷问：为什么要设计这么繁琐的“甩锅”机制？
 
-### <font style="color:rgb(79, 79, 79);">6、运行期优化</font>
-#### <font style="color:rgb(79, 79, 79);">1）即时编译</font>
-**<font style="color:rgb(77, 77, 77);">分层编译</font>**<font style="color:rgb(77, 77, 77);">  
-</font><font style="color:rgb(77, 77, 77);">JVM 将执行状态分成了 5 个层次：</font>
+这是 JVM 安全架构中最伟大的设计之一，主要为了解决两个致命的物理问题：
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">0层：解释执行，用解释器将字节码翻译为机器码</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">1层：使用 C1 即时编译器编译执行（不带 proﬁling）</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">2层：使用 C1 即时编译器编译执行（带基本的profiling）</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">3层：使用 C1 即时编译器编译执行（带完全的profiling）</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">4层：使用 C2 即时编译器编译执行</font>
+##### ① 绝对的安全堡垒（沙箱安全机制）
 
-<font style="color:rgb(77, 77, 77);">proﬁling 是指在运行过程中收集一些程序执行状态的数据，例如【方法的调用次数】，【循环的 回边次数】等</font>
+假设有一个黑客，在他的项目里自己建了一个包叫 `java.lang`，然后里面写了一个类叫 `String`。在这个假的 `String` 类里，他植入了盗取系统密码的木马病毒。
 
-<font style="color:rgb(77, 77, 77);">即时编译器（JIT）与解释器的区别</font>
+- **如果没有双亲委派**：基层加载器直接把这个带毒的 `String` 加载了，整个系统瞬间崩溃。
+    
+- **有了双亲委派**：加载请求被一路甩锅到最顶层的 **Bootstrap 加载器**。Bootstrap 一看是 `java.lang.String`，心想“这可是我的核心管辖区”，于是直接从官方的 `rt.jar` 里把**真正的、官方的** `String` 类加载进了内存。黑客写的那个假 `String`，连被看一眼的资格都没有，直接被物理无视了！
 
-+ <font style="color:rgba(0, 0, 0, 0.75);">解释器</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">将字节码解释为机器码，下次即使遇到相同的字节码，仍会执行重复的解释</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">是将字节码解释为针对所有平台都通用的机器码</font>
-+ <font style="color:rgba(0, 0, 0, 0.75);">即时编译器</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">将一些字节码编译为机器码，并存入 Code Cache，下次遇到相同的代码，直接执行，无需再编译</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">根据平台类型，生成平台特定的机器码</font>
+##### ② 防止类重复加载
 
-对于大部分的不常用的代码，我们无需耗费时间将其编译成机器码，而是采取解释执行的方式运行；另一方面，对于仅占据小部分的热点代码，我们则可以将其编译成机器码，以达到理想的运行速度。 执行效率上简单比较一下 Interpreter < C1 < C2，总的目标是发现热点代码（hotspot名称的由 来），并优化这些热点代码。
+每次加载都统一由最顶层先确认。如果顶层已经加载过这个类了，下面就不会再去加载第二次。这就保证了在整个 JVM 内存中，`java.lang.Object` 永远只有一个唯一的图纸（Class 对象），不会出现错乱。
 
-**逃逸分析**
+#### 4. 架构师进阶：如何“打破”双亲委派？
 
-逃逸分析（Escape Analysis）简单来讲就是，Java Hotspot 虚拟机可以分析新创建对象的使用范围，并决定是否在 Java 堆上分配内存的一项技术
+在高级面试中，面试官往往会追问：“既然双亲委派这么好，有必须要打破它的场景吗？” **有，而且非常多！企业级开发中到处都在打破。**
 
-逃逸分析的 JVM 参数如下：
+- **Tomcat 等 Web 容器**： 一个 Tomcat 里面可能部署了两个网站：淘宝和天猫。淘宝用了 Spring 4，天猫用了 Spring 5。如果用双亲委派，父加载器只会加载一份 Spring，那必然版本冲突。 所以 Tomcat 狠狠地**打破了双亲委派**，它为每一个网站（Web App）创建了一个独立的 `WebAppClassLoader`，规定：自己网站下的类，自己优先加载，不往上交！从而实现了类库的绝对物理隔离。
+    
+- **JDBC 机制（SPI 打破）**： Java 的官方核心包（Bootstrap 加载）里定义了 `java.sql.Driver` 接口。但是真正的实现类是你引入的 MySQL 驱动包（App 加载）。上层核心类要调用下层用户类，双亲委派的层级彻底倒置了！于是 Java 发明了线程上下文类加载器（Thread Context ClassLoader）来强行逆向加载。
 
-开启逃逸分析：-XX:+DoEscapeAnalysis
-
-关闭逃逸分析：-XX:-DoEscapeAnalysis
-
-显示分析结果：-XX:+PrintEscapeAnalysis
-
-<font style="color:rgb(77, 77, 77);">逃逸分析技术在 Java SE 6u23+ 开始支持，并默认设置为启用状态，可以不用额外加这个参数</font>
-
-<font style="color:rgb(77, 77, 77);">对象逃逸状态</font>
-
-<font style="color:rgb(77, 77, 77);">全局逃逸（GlobalEscape）</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">即一个对象的作用范围逃出了当前方法或者当前线程，有以下几种场景：</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">对象是一个静态变量</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">对象是一个已经发生逃逸的对象</font>
-    - <font style="color:rgba(0, 0, 0, 0.75);">对象作为当前方法的返回值</font>
-
-<font style="color:rgb(77, 77, 77);">参数逃逸（ArgEscape）</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">即一个对象被作为方法参数传递或者被参数引用，但在调用过程中不会发生全局逃逸，这个状态是通过被调方法的字节码确定的</font>
-
-<font style="color:rgb(77, 77, 77);">没有逃逸</font>
-
-+ <font style="color:rgba(0, 0, 0, 0.75);">即方法中的对象没有发生逃逸</font>
-
-**逃逸分析优化**
-
-针对上面第三点，当一个对象没有逃逸时，可以得到以下几个虚拟机的优化
-
-**锁消除**
-
-我们知道线程同步锁是非常牺牲性能的，当编译器确定当前对象只有当前线程使用，那么就会移除该对象的同步锁
-
-例如，StringBuffer 和 Vector 都是用 synchronized 修饰线程安全的，但大部分情况下，它们都只是在当前线程中用到，这样编译器就会优化移除掉这些锁操作
-
-锁消除的 JVM 参数如下：
-
-+ 开启锁消除：-XX:+EliminateLocks
-+ 关闭锁消除：-XX:-EliminateLocks
-
-锁消除在 JDK8 中都是默认开启的，并且锁消除都要建立在逃逸分析的基础上
-
-**<font style="color:rgb(77, 77, 77);">标量替换</font>**  
-<font style="color:rgb(77, 77, 77);">首先要明白标量和聚合量，基础类型和对象的引用可以理解为标量，它们不能被进一步分解。而能被进一步分解的量就是聚合量，比如：对象</font>  
-<font style="color:rgb(77, 77, 77);">对象是聚合量，它又可以被进一步分解成标量，将其成员变量分解为分散的变量，这就叫做标量替换。</font>
-
-<font style="color:rgb(77, 77, 77);">这样，如果一个对象没有发生逃逸，那压根就不用创建它，只会在栈或者寄存器上创建它用到的成员标量，节省了内存空间，也提升了应用程序性能</font>
-
-<font style="color:rgb(77, 77, 77);">标量替换的 JVM 参数如下：</font>
-
-+ <font style="color:rgb(77, 77, 77);">开启标量替换：-XX:+EliminateAllocations</font>
-+ <font style="color:rgb(77, 77, 77);">关闭标量替换：-XX:-EliminateAllocations</font>
-+ <font style="color:rgb(77, 77, 77);">显示标量替换详情：-XX:+PrintEliminateAllocations</font>
-
-<font style="color:rgb(77, 77, 77);">标量替换同样在 JDK8 中都是默认开启的，并且都要建立在逃逸分析的基础上</font>
-
-**<font style="color:rgb(77, 77, 77);">栈上分配</font>**<font style="color:rgb(77, 77, 77);">  
-</font><font style="color:rgb(77, 77, 77);">当对象没有发生逃逸时，该对象就可以通过标量替换分解成成员标量分配在栈内存中，和方法的生命周期一致，随着栈帧出栈时销毁，减少了 GC 压力，提高了应用程序性能</font>
-
-**<font style="color:rgb(77, 77, 77);">方法内联</font>**
-
-**<font style="color:rgb(77, 77, 77);">内联函数  
-</font>**<font style="color:rgb(77, 77, 77);">内联函数就是在程序编译时，编译器将程序中出现的内联函数的调用表达式用内联函数的函数体来直接进行替换</font>
-
-**<font style="color:rgb(77, 77, 77);">JVM内联函数</font>**<font style="color:rgb(77, 77, 77);">  
-</font><font style="color:rgb(77, 77, 77);">C++ 是否为内联函数由自己决定，Java 由编译器决定。Java 不支持直接声明为内联函数的，如果想让他内联，你只能够向编译器提出请求: 关键字 final 修饰 用来指明那个函数是希望被 JVM 内联的，如</font>
-
-```java
-public final void doSomething() {  
-    // to do something  
-}
-```
-
-<font style="color:rgb(77, 77, 77);">总的来说，一般的函数都不会被当做内联函数，只有声明了final后，编译器才会考虑是不是要把你的函数变成内联函数</font>
-
-<font style="color:rgb(77, 77, 77);">JVM内建有许多运行时优化。首先短方法更利于JVM推断。流程更明显，作用域更短，副作用也更明显。如果是长方法JVM可能直接就跪了。</font>
-
-<font style="color:rgb(77, 77, 77);">第二个原因则更重要：方法内联</font>
-
-<font style="color:rgb(77, 77, 77);">如果JVM监测到一些小方法被频繁的执行，它会把方法的调用替换成方法体本身，如：</font>
-
-```java
-private int add4(int x1, int x2, int x3, int x4) { 
-    //这里调用了add2方法
-    return add2(x1, x2) + add2(x3, x4);  
-}  
-
-private int add2(int x1, int x2) {  
-    return x1 + x2;  
-}
-```
-
-<font style="color:rgb(77, 77, 77);">方法调用被替换后</font>
-
-```java
-private int add4(int x1, int x2, int x3, int x4) {  
-    //被替换为了方法本身
-    return x1 + x2 + x3 + x4;  
-}
-
-```
-
-#### <font style="color:rgb(79, 79, 79);">2）反射优化</font>
-```java
-public class Reflect1 {
-    public static void foo() {
-        System.out.println("foo...");
-    }
-
-    public static void main(String[] args) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method foo = Demo3.class.getMethod("foo");
-        for(int i = 0; i<=16; i++) {
-            foo.invoke(null);
-        }
-    }
-}
-
-```
-
-<font style="color:rgb(77, 77, 77);">foo.invoke 前面 0 ~ 15 次调用使用的是 MethodAccessor 的 NativeMethodAccessorImpl 实现</font>  
-<font style="color:rgb(77, 77, 77);">invoke 方法源码</font>
-
-```java
-@CallerSensitive
-public Object invoke(Object obj, Object... args)
-    throws IllegalAccessException, IllegalArgumentException,InvocationTargetException{
-    if (!override) {
-        if (!Reflection.quickCheckMemberAccess(clazz, modifiers)) {
-            Class<?> caller = Reflection.getCallerClass();
-            checkAccess(caller, clazz, obj, modifiers);
-        }
-    }
-    //MethodAccessor是一个接口，有3个实现类，其中有一个是抽象类
-    MethodAccessor ma = methodAccessor;             // read volatile
-    if (ma == null) {
-        ma = acquireMethodAccessor();
-    }
-    return ma.invoke(obj, args);
-}
-```
-
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752828156810-f5706e78-f3b8-41d1-90ff-1a54c77fb4c2.png)
-
-<font style="color:rgb(77, 77, 77);">会由 DelegatingMehodAccessorImpl 去调用 NativeMethodAccessorImpl</font>  
-<font style="color:rgb(77, 77, 77);">NativeMethodAccessorImpl 源码</font>
-
-```java
-class NativeMethodAccessorImpl extends MethodAccessorImpl {
-    private final Method method;
-    private DelegatingMethodAccessorImpl parent;
-    private int numInvocations;
-
-    NativeMethodAccessorImpl(Method var1) {
-        this.method = var1;
-    }
-
-    //每次进行反射调用，会让numInvocation与ReflectionFactory.inflationThreshold的值（15）进行比较，并使使得numInvocation的值加一
-    //如果numInvocation>ReflectionFactory.inflationThreshold，则会调用本地方法invoke0方法
-    public Object invoke(Object var1, Object[] var2) throws IllegalArgumentException, InvocationTargetException {
-        if (++this.numInvocations > ReflectionFactory.inflationThreshold() && !ReflectUtil.isVMAnonymousClass(this.method.getDeclaringClass())) {
-            MethodAccessorImpl var3 = (MethodAccessorImpl)(new MethodAccessorGenerator()).generateMethod(this.method.getDeclaringClass(), this.method.getName(), this.method.getParameterTypes(), this.method.getReturnType(), this.method.getExceptionTypes(), this.method.getModifiers());
-            this.parent.setDelegate(var3);
-        }
-
-        return invoke0(this.method, var1, var2);
-    }
-
-    void setParent(DelegatingMethodAccessorImpl var1) {
-        this.parent = var1;
-    }
-
-    private static native Object invoke0(Method var0, Object var1, Object[] var2);
-}
-```
-
-```plain
-//ReflectionFactory.inflationThreshold()方法的返回值
-private static int inflationThreshold = 15;
-```
-
-+ 一开始if条件不满足，就会调用本地方法 invoke0
-+ 随着 numInvocation 的增大，当它大于 ReflectionFactory.inflationThreshold 的值 16 时，就会本地方法访问器替换为一个运行时动态生成的访问器，来提高效率
-    - 这时会从反射调用变为正常调用，即直接调用 Reflect1.foo()
-
-<!-- 这是一张图片，ocr 内容为： -->
-![](https://cdn.nlark.com/yuque/0/2025/png/58546395/1752828206714-993163a1-03fe-4f45-87c5-09a0287d4648.png)
-
+### 6、运行期优化
